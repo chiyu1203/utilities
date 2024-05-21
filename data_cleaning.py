@@ -131,7 +131,7 @@ def preprocess_fictrac_data(thisDir, json_file):
     log_pattern = "*.log"
     dat_pattern = "*.dat"
     track_ball_radius = analysis_methods.get("trackball_radius")
-    frame_rate = analysis_methods.get("frame_rate")
+    monitor_fps = analysis_methods.get("monitor_fps")
     fictrac_posthoc_analysis = analysis_methods.get("fictrac_posthoc_analysis")
     # list up the files in the dir
     pd_pattern = "PD*.csv"
@@ -214,9 +214,9 @@ def preprocess_fictrac_data(thisDir, json_file):
     ## adjust the unit of the x, y position
     raw_data.iloc[:, 6] = raw_data.iloc[:, 6] * track_ball_radius
     raw_data.iloc[:, 7] = raw_data.iloc[:, 7] * track_ball_radius
-    raw_data.iloc[:, 8] = raw_data.iloc[:, 8] * track_ball_radius * frame_rate
+    raw_data.iloc[:, 8] = raw_data.iloc[:, 8] * track_ball_radius * monitor_fps
     ## adjust the unit of the z vector based on the target frame rate of fictrac
-    raw_data.iloc[:, 2] = raw_data.iloc[:, 2] * frame_rate
+    raw_data.iloc[:, 2] = raw_data.iloc[:, 2] * monitor_fps
 
     ### save the curated_database
     if analysis_methods.get("debug_mode") == False:
