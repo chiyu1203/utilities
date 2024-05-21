@@ -232,8 +232,13 @@ def preprocess_fictrac_data(thisDir, json_file):
 
 if __name__ == "__main__":
     # thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN23014\231126\coherence\session1"
-    thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN23018\240422\coherence\session2"
-    json_file = "analysis_methods_dictionary.json"
+    # thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN23018\240422\coherence\session2"
+    thisDir = (
+        "Z:/DATA/experiment_trackball_Optomotor/Zball/GN23019/240507/coherence/session1"
+    )
+    json_file = (
+        r"C:\Users\neuroPC\Documents\GitHub\ephys\analysis_methods_dictionary.json"
+    )
     tic = time.perf_counter()
     preprocess_fictrac_data(thisDir, json_file)
     toc = time.perf_counter()
