@@ -5,6 +5,7 @@ import shutil
 import time
 import fnmatch
 from pathlib import Path
+import glob
 
 
 def select_animals(df, *args):
@@ -95,12 +96,28 @@ def find_file(thisDir, pattern):
         print(f"no {pattern} found in {thisDir}. Let's leave this programme")
         return None
     elif len(file_check) == 1:
-        return os.path.join(thisDir, file_check[0])
+        return Path(thisDir)/file_check[0]
     else:
         vid_list = []
         for i in range(len(file_check)):
-            vid_list.append(os.path.join(thisDir, file_check[i]))
+            vid_list.append(Path(thisDir)/file_check[i])
         return vid_list
+    
+
+def find_file_multiple_patterns(thisDir,patterns):
+    if isinstance(thisDir, str):
+        for pattern in patterns:
+            led_files = glob.glob(os.path.join(thisDir,pattern))
+            if led_files:
+                return led_files
+        print("led file is not found")
+    else:
+        for pattern in patterns:
+            led_files = glob.glob(str(thisDir/pattern))
+            if led_files:
+                return led_files
+        print("led file is not found")
+    return None
 
 
 def find_subdirectory(directory, exp_name, pattern):
