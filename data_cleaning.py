@@ -15,46 +15,139 @@ from useful_tools import find_file
 def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Zball"):
     stim_info = stim_info.reset_index()
     raw_column_number = stim_info.shape[1]
-    col_num = [2, 4, 5, 7, 11, 13, 15, 17]
-    col_name = [
-        "ID",
-        "Size",
-        "Colour",
-        "numDots",
-        "Contrast",
-        "VelX",
-        "VelY",
-        "Coherence",
-    ]
-    for i, j in zip(col_num, col_name):
-        stim_info[["tmp", j]] = stim_info.iloc[:, i].str.split("=", expand=True)
-        stim_info[j] = pd.to_numeric(stim_info[j])
-    if exp_place == "Zball":
-        stim_info["ts"] = stim_info["Value"].str.replace(r"[()]", "", regex=True)
-    elif exp_place == "VCCball":
-        stim_info["Value"] = stim_info["Value"].str.replace(r"[()]", "", regex=True)
-        if stim_info["Timestamp"].dtypes == "object":
-            stim_info["Timestamp"] = stim_info["Timestamp"].str.replace(
-                r"[()]", "", regex=True
+    if visual_paradigm_name=="gratings":
+        stim_variable = []
+        stimulus_timestamp = []
+        for row in range(0, len(stim_info)):
+
+            # delete the bracket in current speed and save it as integer in new list
+            stim_variable.append(int(stim_info.iloc[row, 2].replace("(", "")))
+            stimulus_timestamp.append(float(stim_info.iloc[row, 3].replace(")", "")))
+        stim_variable = np.array(stim_variable).reshape((len(stim_info), -1))
+        stim_info["stim_type"] = stim_variable
+        stim_info["ts"] = stimulus_timestamp
+        stim_info.drop(columns=stim_info.columns[0 : raw_column_number], inplace=True)
+        stim_type = np.sort(stim_info.stim_type.unique()).tolist()
+
+
+    elif visual_paradigm_name=="sweeploom":
+        stim_variable = []
+        stimulus_timestamp = []
+        stim_type = analysis_methods.get("stim_type")
+        # stim_type = [
+        #     "c2b_f_sloom",
+        #     "c2b_s_sloom",
+        #     "c2f_f_sloom",
+        #     "c2f_s_sloom",
+        #     "c2c_f_loom",
+        #     "c2c_s_loom",
+        # ]
+        for row in range(0, len(stim_info)):
+            stim_variable.append(int(stim_info.iloc[row, 2].split("=", 1)[1]))
+            stim_variable.append(int(stim_info.iloc[row, 3].split("=", 1)[1]))
+            stim_variable.append(int(stim_info.iloc[row, 4].split("=", 1)[1]))
+            stim_variable.append(int(stim_info.iloc[row, 5].split("=", 1)[1]))
+            stim_variable.append(int(stim_info.iloc[row, 6].split("=", 1)[1]))
+            if exp_date in ["221102", "221103"]:
+                stim_variable.append(int(stim_info.iloc[row, 7].split("=", 1)[1]))
+                stim_variable.append(int(stim_info.iloc[row, 8].split("=", 1)[1]))
+            # stim_variable.append(int(re.split(r'=|}',stim_info.iloc[row,5])[1]))
+            if isinstance(stim_info.loc[row, "Value"], float):
+                timestamp = stim_info.loc[row, "Timestamp"]
+            else:
+                timestamp = (
+                    str(stim_info.loc[row, "Timestamp"])
+                    + "."
+                    + stim_info.loc[row, "Value"]
+                )
+            stim_variable.append(float(timestamp.replace(")", "")))
+        stim_variable = np.array(stim_variable).reshape((len(stim_info), -1))
+        column_names = [
+            "size_start",
+            "size_end",
+            "location1_start",
+            "location1_end",
+            "location2_start",
+            "location2_end",
+            "time",
+            "timestamp",
+        ]
+        stim_info = pd.DataFrame(stim_variable, columns=column_names)
+        if exp_date in ["2022-10-15", "2022-10-16"]:
+            ### use this criteria for experiments during exp_date=['221015','221016']
+            filters = [
+                (stim_info.iloc[:, 0] == 1)
+                & (stim_info.iloc[:, 2] > stim_info.iloc[:, 3]),
+                (stim_info.iloc[:, 0] == 8)
+                & (stim_info.iloc[:, 2] > stim_info.iloc[:, 3]),
+                (stim_info.iloc[:, 0] == 1)
+                & (stim_info.iloc[:, 2] < stim_info.iloc[:, 3]),
+                (stim_info.iloc[:, 0] == 8)
+                & (stim_info.iloc[:, 2] < stim_info.iloc[:, 3]),
+                (stim_info.iloc[:, 0] == 1)
+                & (stim_info.iloc[:, 2] == stim_info.iloc[:, 3]),
+                (stim_info.iloc[:, 0] == 8)
+                & (stim_info.iloc[:, 2] == stim_info.iloc[:, 3]),
+            ]
+
+        else:
+            filters = [
+                (stim_info.iloc[:, 6] == 1)
+                & (stim_info.iloc[:, 2] > stim_info.iloc[:, 3]),
+                (stim_info.iloc[:, 6] == 2)
+                & (stim_info.iloc[:, 2] > stim_info.iloc[:, 3]),
+                (stim_info.iloc[:, 6] == 1)
+                & (stim_info.iloc[:, 2] < stim_info.iloc[:, 3]),
+                (stim_info.iloc[:, 6] == 2)
+                & (stim_info.iloc[:, 2] < stim_info.iloc[:, 3]),
+                (stim_info.iloc[:, 6] == 1)
+                & (stim_info.iloc[:, 2] == stim_info.iloc[:, 3]),
+                (stim_info.iloc[:, 6] == 2)
+                & (stim_info.iloc[:, 2] == stim_info.iloc[:, 3]),
+            ]
+        stim_info["stim_type"] = np.select(filters, stim_type)
+    else:
+        
+        col_index = [2, 4, 5, 7, 11, 13, 15, 17]
+        col_name = [
+            "ID",
+            "Size",
+            "Colour",
+            "numDots",
+            "Contrast",
+            "VelX",
+            "VelY",
+            "Coherence",
+        ]
+        for i, j in zip(col_index, col_name):
+            stim_info[["tmp", j]] = stim_info.iloc[:, i].str.split("=", expand=True)
+            stim_info[j] = pd.to_numeric(stim_info[j])
+        if exp_place == "Zball" or exp_place == "matrexVR":
+            stim_info["ts"] = stim_info["Value"].str.replace(r"[()]", "", regex=True)
+        elif exp_place == "VCCball":
+            stim_info["Value"] = stim_info["Value"].str.replace(r"[()]", "", regex=True)
+            if stim_info["Timestamp"].dtypes == "object":
+                stim_info["Timestamp"] = stim_info["Timestamp"].str.replace(
+                    r"[()]", "", regex=True
+                )
+            stim_info["Value"] = stim_info["Value"].fillna(0)
+            stim_info["Timestamp"] = stim_info["Timestamp"].astype(str)
+            stim_info["Value"] = stim_info["Value"].astype(str)
+            stim_info["ts"] = stim_info[["Timestamp", "Value"]].agg(".".join, axis=1)
+        stim_info["ts"] = pd.to_numeric(stim_info["ts"])
+        stim_info["ts"] = stim_info["ts"].astype("float32")
+        stim_info.drop(columns=stim_info.columns[0 : raw_column_number + 1], inplace=True)
+        if visual_paradigm_name.endswith("densities"):
+            stim_variable_direction = (
+                stim_info["VelX"] * stim_info["numDots"] / abs(stim_info["VelX"])
             )
-        stim_info["Value"] = stim_info["Value"].fillna(0)
-        stim_info["Timestamp"] = stim_info["Timestamp"].astype(str)
-        stim_info["Value"] = stim_info["Value"].astype(str)
-        stim_info["ts"] = stim_info[["Timestamp", "Value"]].agg(".".join, axis=1)
-    stim_info["ts"] = pd.to_numeric(stim_info["ts"])
-    stim_info["ts"] = stim_info["ts"].astype("float32")
-    stim_info.drop(columns=stim_info.columns[0 : raw_column_number + 1], inplace=True)
-    if visual_paradigm_name.endswith("densities"):
-        stim_variable_direction = (
-            stim_info["VelX"] * stim_info["numDots"] / abs(stim_info["VelX"])
-        )
-    elif visual_paradigm_name == "coherence":
-        stim_variable_direction = (
-            stim_info["VelX"] * stim_info["Coherence"] / abs(stim_info["VelX"])
-        )
-    # positive value means dots moves from right to left in a window, allocentric orientation in a panoramic setup: counterclock wise
-    stim_info["stim_type"] = -1 * stim_variable_direction.astype(int)
-    stim_type = np.sort(stim_info.stim_type.unique()).tolist()
+        elif visual_paradigm_name == "coherence":
+            stim_variable_direction = (
+                stim_info["VelX"] * stim_info["Coherence"] / abs(stim_info["VelX"])
+            )
+        # positive value means dots moves from right to left in a window, allocentric orientation in a panoramic setup: counterclock wise
+        stim_info["stim_type"] = -1 * stim_variable_direction.astype(int)
+        stim_type = np.sort(stim_info.stim_type.unique()).tolist()
     return stim_info, stim_type
 
 
