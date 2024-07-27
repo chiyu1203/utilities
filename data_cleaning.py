@@ -11,6 +11,18 @@ import sys
 from pathlib import Path
 from useful_tools import find_file
 
+def load_temperature_data(txt_path):
+#data comes from EL-USB
+#instead of using the first column as index, use the second column to log in index as dateindex. This is easier for resample
+#https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.resample.html
+    df = pd.read_csv(txt_path,parse_dates=[1], header=0, sep=",", index_col=1,encoding = 'unicode_escape', engine ='python')
+    df.drop(df.columns[[0,4]], axis=1, inplace=True)
+    #then maybe use this method .interpolate()
+    df=df.resample('1s').interpolate()
+    #this for microsecond"1U"
+    #print(df.dtypes)
+    return df
+
 
 def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Zball"):
     stim_info = stim_info.reset_index()
@@ -211,29 +223,15 @@ def generate_timestamp_csv(file_path):
         data = float_values
 
     return data
-
-
-def preprocess_fictrac_data(thisDir, json_file):
-    if isinstance(json_file, dict):
-        analysis_methods = json_file
-    else:
-        with open(json_file, "r") as f:
-            print(f"load analysis methods from file {json_file}")
-            analysis_methods = json.loads(f.read())
-    # timestamp_pattern='trial_*.csv'
-    log_pattern = "*.log"
-    dat_pattern = "*.dat"
+def load_fictrac_data_file(this_file,analysis_methods):
+    #load analysis methods
     track_ball_radius = analysis_methods.get("trackball_radius")
     monitor_fps = analysis_methods.get("monitor_fps")
     fictrac_posthoc_analysis = analysis_methods.get("fictrac_posthoc_analysis")
-    # list up the files in the dir
-    pd_pattern = "PD*.csv"
-    this_dat_file = find_file(thisDir, dat_pattern)
-
-    ## load dat file
-    file_name = Path(this_dat_file).stem
+    #laod file
+    file_name = Path(this_file).stem
     experiment_timestamp = file_name.split("-")
-    raw_data = pd.read_table(this_dat_file, sep="\s+")
+    raw_data = pd.read_table(this_file, sep="\s+")
     """
     fictrac title is here 'frame counter', 'delta rotation vector cam x', 'delta rotation vector cam y', \
     'delta rotation vector cam z', 'delta rotation error score', 'delta rotation vector lab x', \
@@ -313,7 +311,7 @@ def preprocess_fictrac_data(thisDir, json_file):
 
     ### save the curated_database
     if analysis_methods.get("debug_mode") == False:
-        database_name = f"database_curated.pickle"
+        database_name = f"database_{file_name}.pickle"
         database_directory = os.path.join(thisDir, database_name)
         if (analysis_methods.get("overwrite_curated_dataset") == False) and (
             os.path.isfile == True
@@ -323,15 +321,40 @@ def preprocess_fictrac_data(thisDir, json_file):
             raw_data.to_pickle(database_directory)
 
 
+def preprocess_fictrac_data(thisDir, json_file):
+    if isinstance(json_file, dict):
+        analysis_methods = json_file
+    else:
+        with open(json_file, "r") as f:
+            print(f"load analysis methods from file {json_file}")
+            analysis_methods = json.loads(f.read())
+    # timestamp_pattern='trial_*.csv'
+    log_pattern = "*.log"
+    pd_pattern = "PD*.csv"    
+    # list up the files infind_file the dir
+
+    dat_pattern = "*.dat"
+    found_result = find_file(thisDir, dat_pattern)
+    if found_result is None:
+        return print(f"file with {dat_pattern} not found")
+    if isinstance(found_result, list):
+        for this_file in found_result:
+            print(f"found multiple files with {dat_pattern}. Use a for-loop to go through them")
+            load_fictrac_data_file(this_file,analysis_methods)
+    elif len(found_result.stem) > 0:
+        load_fictrac_data_file(found_result,analysis_methods)
+    else:
+        return print(f"file with {dat_pattern} not found")
+
+
 if __name__ == "__main__":
     # thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN23014\231126\coherence\session1"
     # thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN23018\240422\coherence\session2"
-    thisDir = (
-        "Z:/DATA/experiment_trackball_Optomotor/Zball/GN23019/240507/coherence/session1"
-    )
-    json_file = (
-        r"C:\Users\neuroPC\Documents\GitHub\ephys\analysis_methods_dictionary.json"
-    )
+    # thisDir = (
+    #     "Z:/DATA/experiment_trackball_Optomotor/Zball/GN23019/240507/coherence/session1"
+    # )
+    thisDir = r"C:\Users\neuroLaptop\Documents\GN24029\240717\coherence\session1"
+    json_file = r"C:\Users\neuroLaptop\Documents\GitHub\UnityDataAnalysis\analysis_methods_dictionary.json"
     tic = time.perf_counter()
     preprocess_fictrac_data(thisDir, json_file)
     toc = time.perf_counter()

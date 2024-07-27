@@ -7,6 +7,8 @@ import fnmatch
 from pathlib import Path
 import glob
 
+def find_nearest(items, pivot):
+    return min(items, key=lambda x: abs(x - pivot))
 
 def select_animals(df, *args):
     if (len(args) % 2) == 1:
