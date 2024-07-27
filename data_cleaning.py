@@ -11,6 +11,17 @@ import sys
 from pathlib import Path
 from useful_tools import find_file
 
+def update_csv_value(old_csv_path,new_csv_path):
+    with open(old_csv_path, 'r') as x:
+        old_csv = list(csv.reader(x, delimiter=","))
+        #old_csv = np.genfromtxt(x,delimiter=",")
+    old_csv = np.genfromtxt(old_csv_path,delimiter=",")
+    new_csv = np.genfromtxt(new_csv_path,delimiter=",",dtype=int)
+    old_csv[:,0]=new_csv
+    np.savetxt(old_csv_path,old_csv,delimiter=',',fmt='%1.4f')
+    return None
+
+
 def load_temperature_data(txt_path):
 #data comes from EL-USB
 #instead of using the first column as index, use the second column to log in index as dateindex. This is easier for resample
@@ -20,6 +31,7 @@ def load_temperature_data(txt_path):
     #then maybe use this method .interpolate()
     df=df.resample('1s').interpolate()
     #this for microsecond"1U"
+    #this for milliseonds"L"
     #print(df.dtypes)
     return df
 
