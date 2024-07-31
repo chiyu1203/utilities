@@ -349,14 +349,13 @@ def preprocess_fictrac_data(thisDir, json_file):
     found_result = find_file(thisDir, dat_pattern)
     if found_result is None:
         return print(f"file with {dat_pattern} not found")
-    if isinstance(found_result, list):
-        for this_file in found_result:
-            print(f"found multiple files with {dat_pattern}. Use a for-loop to go through them")
-            load_fictrac_data_file(this_file,analysis_methods)
-    elif len(found_result.stem) > 0:
-        load_fictrac_data_file(found_result,analysis_methods)
     else:
-        return print(f"file with {dat_pattern} not found")
+        if isinstance(found_result, list):
+            for this_file in found_result:
+                print(f"found multiple files with {dat_pattern}. Use a for-loop to go through them")
+                load_fictrac_data_file(this_file,analysis_methods)
+        elif len(found_result.stem) > 0:
+            load_fictrac_data_file(found_result,analysis_methods)
 
 
 if __name__ == "__main__":
