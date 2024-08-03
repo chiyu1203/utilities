@@ -11,35 +11,49 @@ import sys
 from pathlib import Path
 from useful_tools import find_file
 
-def update_csv_value(old_csv_path,new_csv_path):
-    with open(old_csv_path, 'r') as x:
+
+def update_csv_value(old_csv_path, new_csv_path):
+    with open(old_csv_path, "r") as x:
         old_csv = list(csv.reader(x, delimiter=","))
-        #old_csv = np.genfromtxt(x,delimiter=",")
-    old_csv = np.genfromtxt(old_csv_path,delimiter=",")
-    new_csv = np.genfromtxt(new_csv_path,delimiter=",",dtype=int)
-    old_csv[:,0]=new_csv
-    np.savetxt(old_csv_path,old_csv,delimiter=',',fmt='%1.4f')
+        # old_csv = np.genfromtxt(x,delimiter=",")
+    old_csv = np.genfromtxt(old_csv_path, delimiter=",")
+    new_csv = np.genfromtxt(new_csv_path, delimiter=",", dtype=int)
+    old_csv[:, 0] = new_csv
+    np.savetxt(old_csv_path, old_csv, delimiter=",", fmt="%1.4f")
     return None
 
 
 def load_temperature_data(txt_path):
-#data comes from EL-USB
-#instead of using the first column as index, use the second column to log in index as dateindex. This is easier for resample
-#https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.resample.html
-    df = pd.read_csv(txt_path,parse_dates=[1], header=0, sep=",", index_col=1,encoding = 'unicode_escape', engine ='python')
-    df.drop(df.columns[[0,4]], axis=1, inplace=True)
-    #then maybe use this method .interpolate()
-    df=df.resample('1s').interpolate()
-    #this for microsecond"1U"
-    #this for milliseonds"L"
-    #print(df.dtypes)
+    if txt_path.endswith(".txt"):
+        # data comes from EL-USB
+        # instead of using the first column as index, use the second column to log in index as dateindex. This is easier for resample
+        # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.resample.html
+        df = pd.read_csv(
+            txt_path,
+            parse_dates=[1],
+            header=0,
+            sep=",",
+            index_col=1,
+            encoding="unicode_escape",
+            engine="python",
+        )
+        df.drop(df.columns[[0, 4]], axis=1, inplace=True)
+        # then maybe use this method .interpolate()
+        df = df.resample("1s").interpolate()
+        # this for microsecond"1U"
+        # this for milliseonds"L"
+        # print(df.dtypes)
+
+    elif txt_path.endswith(".csv"):
+        print("Here to process data loaded in Bonsai")
+
     return df
 
 
 def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Zball"):
     stim_info = stim_info.reset_index()
     raw_column_number = stim_info.shape[1]
-    if visual_paradigm_name=="gratings":
+    if visual_paradigm_name == "gratings":
         stim_variable = []
         stimulus_timestamp = []
         for row in range(0, len(stim_info)):
@@ -50,11 +64,10 @@ def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Z
         stim_variable = np.array(stim_variable).reshape((len(stim_info), -1))
         stim_info["stim_type"] = stim_variable
         stim_info["ts"] = stimulus_timestamp
-        stim_info.drop(columns=stim_info.columns[0 : raw_column_number], inplace=True)
+        stim_info.drop(columns=stim_info.columns[0:raw_column_number], inplace=True)
         stim_type = np.sort(stim_info.stim_type.unique()).tolist()
 
-
-    elif visual_paradigm_name=="sweeploom":
+    elif visual_paradigm_name == "sweeploom":
         stim_variable = []
         stimulus_timestamp = []
         stim_type = analysis_methods.get("stim_type")
@@ -131,7 +144,7 @@ def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Z
             ]
         stim_info["stim_type"] = np.select(filters, stim_type)
     else:
-        
+
         col_index = [2, 4, 5, 7, 11, 13, 15, 17]
         col_name = [
             "ID",
@@ -160,7 +173,9 @@ def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Z
             stim_info["ts"] = stim_info[["Timestamp", "Value"]].agg(".".join, axis=1)
         stim_info["ts"] = pd.to_numeric(stim_info["ts"])
         stim_info["ts"] = stim_info["ts"].astype("float32")
-        stim_info.drop(columns=stim_info.columns[0 : raw_column_number + 1], inplace=True)
+        stim_info.drop(
+            columns=stim_info.columns[0 : raw_column_number + 1], inplace=True
+        )
         if visual_paradigm_name.endswith("densities"):
             stim_variable_direction = (
                 stim_info["VelX"] * stim_info["numDots"] / abs(stim_info["VelX"])
@@ -235,12 +250,14 @@ def generate_timestamp_csv(file_path):
         data = float_values
 
     return data
-def load_fictrac_data_file(this_file,analysis_methods):
-    #load analysis methods
+
+
+def load_fictrac_data_file(this_file, analysis_methods):
+    # load analysis methods
     track_ball_radius = analysis_methods.get("trackball_radius")
     monitor_fps = analysis_methods.get("monitor_fps")
     fictrac_posthoc_analysis = analysis_methods.get("fictrac_posthoc_analysis")
-    #laod file
+    # laod file
     file_name = Path(this_file).stem
     experiment_timestamp = file_name.split("-")
     raw_data = pd.read_table(this_file, sep="\s+")
@@ -324,11 +341,11 @@ def load_fictrac_data_file(this_file,analysis_methods):
     ### save the curated_database
     if analysis_methods.get("debug_mode") == False:
         database_name = f"database_{file_name}.pickle"
-        database_directory = os.path.join(thisDir, database_name)
+        database_directory = this_file.parent.joinpath(database_name)
         if (analysis_methods.get("overwrite_curated_dataset") == False) and (
-            os.path.isfile == True
+            database_directory.is_file() == True
         ):
-            print(f"do not overwrite existing pickle file {thisDir}")
+            print(f"do not overwrite existing pickle file {this_file}")
         else:
             raw_data.to_pickle(database_directory)
 
@@ -342,7 +359,7 @@ def preprocess_fictrac_data(thisDir, json_file):
             analysis_methods = json.loads(f.read())
     # timestamp_pattern='trial_*.csv'
     log_pattern = "*.log"
-    pd_pattern = "PD*.csv"    
+    pd_pattern = "PD*.csv"
     # list up the files infind_file the dir
 
     dat_pattern = "*.dat"
@@ -352,20 +369,17 @@ def preprocess_fictrac_data(thisDir, json_file):
     else:
         if isinstance(found_result, list):
             for this_file in found_result:
-                print(f"found multiple files with {dat_pattern}. Use a for-loop to go through them")
-                load_fictrac_data_file(this_file,analysis_methods)
+                print(
+                    f"found multiple files with {dat_pattern}. Use a for-loop to go through them"
+                )
+                load_fictrac_data_file(this_file, analysis_methods)
         elif len(found_result.stem) > 0:
-            load_fictrac_data_file(found_result,analysis_methods)
+            load_fictrac_data_file(found_result, analysis_methods)
 
 
 if __name__ == "__main__":
-    # thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN23014\231126\coherence\session1"
-    # thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN23018\240422\coherence\session2"
-    # thisDir = (
-    #     "Z:/DATA/experiment_trackball_Optomotor/Zball/GN23019/240507/coherence/session1"
-    # )
-    thisDir = r"C:\Users\neuroLaptop\Documents\GN24029\240717\coherence\session1"
-    json_file = r"C:\Users\neuroLaptop\Documents\GitHub\UnityDataAnalysis\analysis_methods_dictionary.json"
+    thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24032\240717\coherence\session1"
+    json_file = r".\analysis_methods_dictionary.json"
     tic = time.perf_counter()
     preprocess_fictrac_data(thisDir, json_file)
     toc = time.perf_counter()
