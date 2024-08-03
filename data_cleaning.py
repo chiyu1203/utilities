@@ -176,7 +176,7 @@ def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Z
         stim_info.drop(
             columns=stim_info.columns[0 : raw_column_number + 1], inplace=True
         )
-        if visual_paradigm_name.endswith("densities"):
+        if visual_paradigm_name.endswith("sities"):
             stim_variable_direction = (
                 stim_info["VelX"] * stim_info["numDots"] / abs(stim_info["VelX"])
             )
