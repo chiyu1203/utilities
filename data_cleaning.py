@@ -53,7 +53,7 @@ def load_temperature_data(txt_path):
 def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Zball"):
     stim_info = stim_info.reset_index()
     raw_column_number = stim_info.shape[1]
-    if visual_paradigm_name == "gratings":
+    if visual_paradigm_name.lower() == "gratings":
         stim_variable = []
         stimulus_timestamp = []
         for row in range(0, len(stim_info)):
@@ -67,7 +67,7 @@ def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Z
         stim_info.drop(columns=stim_info.columns[0:raw_column_number], inplace=True)
         stim_type = np.sort(stim_info.stim_type.unique()).tolist()
 
-    elif visual_paradigm_name == "sweeploom":
+    elif visual_paradigm_name.lower() == "sweeploom":
         stim_variable = []
         stimulus_timestamp = []
         stim_type = analysis_methods.get("stim_type")
@@ -145,9 +145,10 @@ def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Z
         stim_info["stim_type"] = np.select(filters, stim_type)
     else:
 
-        col_index = [2, 4, 5, 7, 11, 13, 15, 17]
+        col_index = [2, 3, 4, 5, 7, 11, 13, 15, 17]
         col_name = [
             "ID",
+            "Duration",
             "Size",
             "Colour",
             "numDots",
@@ -159,9 +160,9 @@ def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Z
         for i, j in zip(col_index, col_name):
             stim_info[["tmp", j]] = stim_info.iloc[:, i].str.split("=", expand=True)
             stim_info[j] = pd.to_numeric(stim_info[j])
-        if exp_place == "Zball" or exp_place == "matrexVR":
+        if exp_place.lower() == "zball" or exp_place.lower() == "matrexvr":
             stim_info["ts"] = stim_info["Value"].str.replace(r"[()]", "", regex=True)
-        elif exp_place == "VCCball":
+        elif exp_place.lower() == "vccball":
             stim_info["Value"] = stim_info["Value"].str.replace(r"[()]", "", regex=True)
             if stim_info["Timestamp"].dtypes == "object":
                 stim_info["Timestamp"] = stim_info["Timestamp"].str.replace(
@@ -180,7 +181,7 @@ def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Z
             stim_variable_direction = (
                 stim_info["VelX"] * stim_info["numDots"] / abs(stim_info["VelX"])
             )
-        elif visual_paradigm_name == "coherence":
+        elif visual_paradigm_name.lower() == "coherence":
             stim_variable_direction = (
                 stim_info["VelX"] * stim_info["Coherence"] / abs(stim_info["VelX"])
             )
@@ -324,7 +325,7 @@ def load_fictrac_data_file(this_file, analysis_methods):
         raw_data["timestamp"] = timestamp_arr
     elif fictrac_posthoc_analysis == True:
         print(
-            "Use posthoc analysis to get dat file hence the timestamp from this file the time posthoc analysis was done. Hence, not useful to align tracking with stimulus anymore"
+            "Use posthoc analysis to get dat file. Timestamps are locked to when the posthoc analysis is done. Hence, not useful to align tracking with stimulus anymore"
         )
     else:
         print("no error timestamp value comes from fictrac dat file")
