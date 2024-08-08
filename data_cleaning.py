@@ -257,6 +257,7 @@ def load_fictrac_data_file(this_file, analysis_methods):
     # load analysis methods
     track_ball_radius = analysis_methods.get("trackball_radius")
     monitor_fps = analysis_methods.get("monitor_fps")
+    camera_fps=analysis_methods.get("camera_fps")
     fictrac_posthoc_analysis = analysis_methods.get("fictrac_posthoc_analysis")
     # laod file
     file_name = Path(this_file).stem
@@ -274,20 +275,16 @@ def load_fictrac_data_file(this_file, analysis_methods):
     """
     ## drop some column
     raw_data.drop(
-        raw_data.columns[[0, 1, 2, 3, 4, 8, 9, 10, 16, 17, 19, 20, 21, 22, 23]],
+        raw_data.columns[[0, 1, 2, 3, 4,5,6,8, 9, 10,11,12,13,18,19, 20, 21, 22, 23]],
         axis=1,
         inplace=True,
     )
     raw_data.columns = [
-        "delta rotation vector lab x",
-        "delta rotation vector lab y",
         "delta rotation vector lab z",
-        "absolute rotation vector lab x",
-        "absolute rotation vector lab y",
-        "absolute rotation vector lab z",
         "intergrated x position",
         "intergrated y position",
-        "instant speed",
+        "integrated animal heading",
+        "animal movement direction",
         "timestamp",
     ]
     ## cleaning , and change the data from object to float
@@ -329,15 +326,14 @@ def load_fictrac_data_file(this_file, analysis_methods):
         )
     else:
         print("no error timestamp value comes from fictrac dat file")
+    
     for ind in range(0, raw_data.shape[1] - 1):
         raw_data.iloc[:, ind] = pd.to_numeric(raw_data.iloc[:, ind]).astype("float32")
-
-    ## adjust the unit of the x, y position
-    raw_data.iloc[:, 6] = raw_data.iloc[:, 6] * track_ball_radius
-    raw_data.iloc[:, 7] = raw_data.iloc[:, 7] * track_ball_radius
-    raw_data.iloc[:, 8] = raw_data.iloc[:, 8] * track_ball_radius * monitor_fps
+    ## adjust the unit of the x, y position from radiam to mm
+    raw_data.loc[:, ["intergrated x position"]] = raw_data.loc[:, ["intergrated x position"]]* track_ball_radius
+    raw_data.loc[:, ["intergrated y position"]] = raw_data.loc[:, ["intergrated y position"]]* track_ball_radius
     ## adjust the unit of the z vector based on the target frame rate of fictrac
-    raw_data.iloc[:, 2] = raw_data.iloc[:, 2] * monitor_fps
+    raw_data.loc[:, ["delta rotation vector lab z"]]=raw_data.loc[:, ["delta rotation vector lab z"]]* camera_fps
 
     ### save the curated_database
     if analysis_methods.get("debug_mode") == False:
@@ -349,6 +345,14 @@ def load_fictrac_data_file(this_file, analysis_methods):
             print(f"do not overwrite existing pickle file {this_file}")
         else:
             raw_data.to_pickle(database_directory)
+        old_database_name = f"database_curated.pickle"
+        old_database_dir = this_file.parent.joinpath(old_database_name)
+        if old_database_dir.is_file() == True:
+            try:
+                Path.unlink(old_database_dir)
+            except OSError as e:
+                print("Error: %s - %s." % (e.filename, e.strerror))
+
 
 
 def preprocess_fictrac_data(thisDir, json_file):
