@@ -216,7 +216,7 @@ def align_matrex_data(
             d = [d[0]]
             G = [G[0]]
             V = [meanVector]
-            S = [meanAngle]
+            MA = [meanAngle]
             ST = [std]
             lX = [dX[-1]]
             tD = [tdist]
@@ -230,7 +230,7 @@ def align_matrex_data(
                     "order": o,
                     "density": d,
                     "groups": G,
-                    "score": S,
+                    "mean_angle": MA,
                     "vector": V,
                     "variance": ST,
                     "distX": lX,
