@@ -259,8 +259,9 @@ def load_fictrac_data_file(this_file, analysis_methods):
     # load analysis methods
     track_ball_radius = analysis_methods.get("trackball_radius")
     monitor_fps = analysis_methods.get("monitor_fps")
-    camera_fps=analysis_methods.get("camera_fps")
+    camera_fps = analysis_methods.get("camera_fps")
     fictrac_posthoc_analysis = analysis_methods.get("fictrac_posthoc_analysis")
+    overwrite_curated_dataset = analysis_methods.get("overwrite_curated_dataset")
     # laod file
     file_name = Path(this_file).stem
     experiment_timestamp = file_name.split("-")
@@ -277,7 +278,9 @@ def load_fictrac_data_file(this_file, analysis_methods):
     """
     ## drop some column
     raw_data.drop(
-        raw_data.columns[[0, 1, 2, 3, 4,5,6,8, 9, 10,11,12,13,18,19, 20, 21, 22, 23]],
+        raw_data.columns[
+            [0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23]
+        ],
         axis=1,
         inplace=True,
     )
@@ -328,33 +331,53 @@ def load_fictrac_data_file(this_file, analysis_methods):
         )
     else:
         print("no error timestamp value comes from fictrac dat file")
-    
+
     for ind in range(0, raw_data.shape[1] - 1):
         raw_data.iloc[:, ind] = pd.to_numeric(raw_data.iloc[:, ind]).astype("float32")
     ## adjust the unit of the x, y position from radiam to mm
-    raw_data.loc[:, ["intergrated x position"]] = raw_data.loc[:, ["intergrated x position"]]* track_ball_radius
-    raw_data.loc[:, ["intergrated y position"]] = raw_data.loc[:, ["intergrated y position"]]* track_ball_radius
+    raw_data.loc[:, ["intergrated x position"]] = (
+        raw_data.loc[:, ["intergrated x position"]] * track_ball_radius
+    )
+    raw_data.loc[:, ["intergrated y position"]] = (
+        raw_data.loc[:, ["intergrated y position"]] * track_ball_radius
+    )
     ## adjust the unit of the z vector based on the target frame rate of fictrac
-    raw_data.loc[:, ["delta rotation vector lab z"]]=raw_data.loc[:, ["delta rotation vector lab z"]]* camera_fps
+    raw_data.loc[:, ["delta rotation vector lab z"]] = (
+        raw_data.loc[:, ["delta rotation vector lab z"]] * camera_fps
+    )
+    remove_old_fictrac_database = False
+    if remove_old_fictrac_database & overwrite_curated_dataset:
+        old_database_pattern = f"database_curated*.pickle"
+        found_result = find_file(thisDir, old_database_pattern)
+        if found_result.is_file() == True:
+            try:
+                Path.unlink(found_result)
+            except OSError as e:
+                print("Error: %s - %s." % (e.filename, e.strerror))
+        elif isinstance(found_result, list):
+            for this_file in found_result:
+                try:
+                    Path.unlink(this_file)
+                except OSError as e:
+                    print("Error: %s - %s." % (e.filename, e.strerror))
 
     ### save the curated_database
     if analysis_methods.get("debug_mode") == False:
         database_name = f"database_{file_name}.pickle"
         database_directory = this_file.parent.joinpath(database_name)
-        if (analysis_methods.get("overwrite_curated_dataset") == False) and (
+        if (overwrite_curated_dataset == False) and (
             database_directory.is_file() == True
         ):
             print(f"do not overwrite existing pickle file {this_file}")
         else:
             raw_data.to_pickle(database_directory)
-        old_database_name = f"database_curated.pickle"
-        old_database_dir = this_file.parent.joinpath(old_database_name)
-        if old_database_dir.is_file() == True:
-            try:
-                Path.unlink(old_database_dir)
-            except OSError as e:
-                print("Error: %s - %s." % (e.filename, e.strerror))
-
+        # old_database_name = f"database_curated.pickle"
+        # old_database_dir = this_file.parent.joinpath(old_database_name)
+        # if old_database_dir.is_file() == True:
+        #     try:
+        #         Path.unlink(old_database_dir)
+        #     except OSError as e:
+        #         print("Error: %s - %s." % (e.filename, e.strerror))
 
 
 def preprocess_fictrac_data(thisDir, json_file):
@@ -385,7 +408,7 @@ def preprocess_fictrac_data(thisDir, json_file):
 
 
 if __name__ == "__main__":
-    thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24032\240717\coherence\session1"
+    thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24036\240801\coherence\session1"
     json_file = r".\analysis_methods_dictionary.json"
     tic = time.perf_counter()
     preprocess_fictrac_data(thisDir, json_file)
