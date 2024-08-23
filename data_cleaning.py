@@ -24,7 +24,9 @@ def update_csv_value(old_csv_path, new_csv_path):
 
 
 def load_temperature_data(txt_path):
-    if txt_path.endswith(".txt"):
+    if type(txt_path)==str:
+        txt_path=Path(txt_path)
+    if txt_path.suffix=='.txt':
         # data comes from EL-USB
         # instead of using the first column as index, use the second column to log in index as dateindex. This is easier for resample
         # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.resample.html
@@ -44,7 +46,7 @@ def load_temperature_data(txt_path):
         # this for milliseonds"L"
         # print(df.dtypes)
 
-    elif txt_path.endswith(".csv"):
+    elif txt_path.suffix=='.csv':
         print("Here to process data loaded in Bonsai")
 
     return df
