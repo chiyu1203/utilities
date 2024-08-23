@@ -44,8 +44,8 @@ def bfill(arr):
 
 def read_simulated_data(this_file, analysis_methods):
     print("read simulated data")
-    if type(this_file)==str:
-        this_file=Path(this_file)
+    if type(this_file) == str:
+        this_file = Path(this_file)
     if this_file.suffix == ".gz":
         with gzip.open(this_file, "rb") as f:
             df = pd.read_csv(f)
@@ -78,7 +78,7 @@ def read_simulated_data(this_file, analysis_methods):
     return ts, x, y, conditions
 
 
-def align_matrex_data(
+def read_matrex_data(
     this_file,
     analysis_methods,
     ts_simulated_animal,
@@ -90,6 +90,7 @@ def align_matrex_data(
     # track_ball_radius = analysis_methods.get("trackball_radius")
     # monitor_fps = analysis_methods.get("monitor_fps")
     # camera_fps = analysis_methods.get("camera_fps")
+    analyze_one_session_only = True
     BODY_LENGTH = analysis_methods.get("body_length")
     growth_condition = analysis_methods.get("growth_condition")
     generate_locust_vr_matrices = analysis_methods.get("generate_locust_vr_matrices")
@@ -98,8 +99,8 @@ def align_matrex_data(
     x_across_trials = []
     y_across_trials = []
     ts_across_trials = []
-    if type(this_file)==str:
-        this_file=Path(this_file)
+    if type(this_file) == str:
+        this_file = Path(this_file)
     if this_file.suffix == ".gz":
         with gzip.open(this_file, "rb") as f:
             df = pd.read_csv(f)
@@ -109,7 +110,7 @@ def align_matrex_data(
     print(df.columns)
     df["SensPosX"].replace(0.0, np.nan, inplace=True)
     df["SensPosY"].replace(0.0, np.nan, inplace=True)
-
+    df["SensRotY"].replace(0.0, np.nan, inplace=True)
     df["Current Time"] = pd.to_datetime(
         df["Current Time"], format="%Y-%m-%d %H:%M:%S.%f"
     )
@@ -125,39 +126,21 @@ def align_matrex_data(
         except OSError as e:
             # If it fails, inform the user.
             print("Error: %s - %s." % (e.filename, e.strerror))
+    for id in range(len(conditions)):
+        this_range = (df["CurrentStep"] == id) & (df["CurrentTrial"] == 0)
+        fchop = str(df["Current Time"][this_range][0]).split(".")[0]
+        fchop = re.sub(r"\s+", "_", fchop)
+        fchop = re.sub(r":", "", fchop)
 
-    df.set_index(df["Current Time"], inplace=True)
-    for id in range(len(ts_simulated_animal)):
-        this_ts = ts_simulated_animal[id]
-        try:
-            df[df.index == this_ts]
-            if (id + 1) < len(ts_simulated_animal):
-                next_ts = ts_simulated_animal[id + 1]
-                try:
-                    print(next_ts[0])
-                    this_range = (df.index > this_ts) & (df.index < next_ts[0])
-                except:
-                    this_range = (df.index > this_ts) & (df.index < next_ts)
-            else:
-                print(df.iloc[len(df) - 1, :])
-                this_range = (df.index > this_ts) & (df.index < df.index[len(df) - 1])
-            fchop = str(this_ts)
-        except:
-            this_range = (df.index > this_ts[0]) & (
-                df.index < this_ts[len(this_ts) - 1]
-            )
-            fchop = str(this_ts[0]).split(".")[0]
         heading_direction = df["SensRotY"][this_range]
         x = df["SensPosX"][this_range]
-        # x = bfill(x.to_numpy())
         y = df["SensPosY"][this_range]
         xy = np.vstack((x.to_numpy(), y.to_numpy()))
         xy = bfill(xy)
-        # y = bfill(y.to_numpy())
         ts = df["Current Time"][this_range]
         trial_no = df["CurrentTrial"][this_range]
         print(trial_no)
-        if len(trial_no.value_counts()) > 1:
+        if len(trial_no.value_counts()) > 1 & analyze_one_session_only == True:
             return (
                 heading_direction_across_trials,
                 x_across_trials,
@@ -175,7 +158,7 @@ def align_matrex_data(
             dX = np.array([rX[i] for i in newindex]).T
             dY = np.array([rY[i] for i in newindex]).T
             angles = heading_direction[newindex].to_numpy() * np.pi / 180
-            # angles = np.array(ListAngles(dX, dY))
+            angles_listangles = np.array(ListAngles(dX, dY))
             c = np.cos(angles)
             s = np.sin(angles)
             xm = np.sum(c) / len(angles)
@@ -269,6 +252,32 @@ def align_matrex_data(
 
 
 """
+used to align dataset
+    df.set_index(df["Current Time"], inplace=True)
+    for id in range(len(ts_simulated_animal)):
+        this_ts = ts_simulated_animal[id]
+        try:
+            df[df.index == this_ts]
+            if (id + 1) < len(ts_simulated_animal):
+                next_ts = ts_simulated_animal[id + 1]
+                try:
+                    print(next_ts[0])
+                    this_range = (df.index > this_ts) & (df.index < next_ts[0])
+                except:
+                    this_range = (df.index > this_ts) & (df.index < next_ts)
+            else:
+                print(df.iloc[len(df) - 1, :])
+                this_range = (df.index > this_ts) & (df.index < df.index[len(df) - 1])
+            fchop = str(this_ts)
+        except:
+            this_range = (df.index > this_ts[0]) & (
+                df.index < this_ts[len(this_ts) - 1]
+            )
+            fchop = str(this_ts[0]).split(".")[0]
+"""
+
+
+"""
 might be useful in the future
     # ts = pd.to_datetime(df["Current Time"], format="%Y-%m-%d %H_%M_%S")
     # df["step_distance"] = np.sqrt(
@@ -340,7 +349,7 @@ def preprocess_matrex_data(thisDir, json_file):
                         x_focal_animal,
                         y_focal_animal,
                         ts_focal_animal,
-                    ) = align_matrex_data(
+                    ) = read_matrex_data(
                         this_file,
                         analysis_methods,
                         ts_simulated_animal,
@@ -354,7 +363,7 @@ def preprocess_matrex_data(thisDir, json_file):
                     x_focal_animal,
                     y_focal_animal,
                     ts_focal_animal,
-                ) = align_matrex_data(
+                ) = read_matrex_data(
                     found_result,
                     analysis_methods,
                     ts_simulated_animal,
