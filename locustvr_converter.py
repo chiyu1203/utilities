@@ -44,6 +44,8 @@ def bfill(arr):
 
 def read_simulated_data(this_file, analysis_methods):
     print("read simulated data")
+    if type(this_file)==str:
+        this_file=Path(this_file)
     if this_file.suffix == ".gz":
         with gzip.open(this_file, "rb") as f:
             df = pd.read_csv(f)
@@ -96,6 +98,8 @@ def align_matrex_data(
     x_across_trials = []
     y_across_trials = []
     ts_across_trials = []
+    if type(this_file)==str:
+        this_file=Path(this_file)
     if this_file.suffix == ".gz":
         with gzip.open(this_file, "rb") as f:
             df = pd.read_csv(f)
