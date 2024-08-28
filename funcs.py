@@ -31,7 +31,7 @@ def diskretize(
                 idx.append(j)
                 break
         i = j + 1
-        print(i)
+        # print(i)
 
     return idx
 
@@ -76,21 +76,21 @@ def removeNoiseVR(X, Y):
     Yraw = Y
 
     a = np.array(calc_eucledian(X, Y))
-    indikes = np.argwhere(a > 0.01)
+    indikes = np.argwhere(a > 0.4)
 
     NewX = np.delete(np.diff(X), indikes.T)
     NewY = np.delete(np.diff(Y), indikes.T)
-    X = np.cumsum(NewX)
-    Y = np.cumsum(NewY)
+    X = np.nancumsum(NewX)
+    Y = np.nancumsum(NewY)
 
-    a = ListAngles(X, Y)
-    a = np.abs(np.gradient(a))
-    indikes = np.argwhere(a < 0.0001)
+    # a = ListAngles(X, Y)
+    # a = np.abs(np.gradient(a))
+    # indikes = np.argwhere(a < 0.00000001)
 
-    NewX = np.delete(np.diff(X), indikes.T)
-    NewY = np.delete(np.diff(Y), indikes.T)
-    X = np.cumsum(NewX)
-    Y = np.cumsum(NewY)
+    # NewX = np.delete(np.diff(X), indikes.T)
+    # NewY = np.delete(np.diff(Y), indikes.T)
+    # X = np.cumsum(NewX)
+    # Y = np.cumsum(NewY)
 
     trackingloss = len(X) / len(Xraw)
 

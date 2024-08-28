@@ -9,6 +9,9 @@ from pathlib import Path
 from funcs import *
 from threading import Lock
 from useful_tools import find_file, find_nearest
+from matplotlib import cm
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 """
 demo if you want to load packages from other directories
@@ -17,7 +20,23 @@ parent_dir = current_working_directory.resolve().parents[0]
 sys.path.insert(0, str(parent_dir) + "\\utilities")
 
 """
+
+
+class MplColorHelper:
+    def __init__(self, cmap_name, start_val, stop_val):
+        self.cmap_name = cmap_name
+        self.cmap = plt.get_cmap(cmap_name)
+        self.norm = mpl.colors.Normalize(vmin=start_val, vmax=stop_val)
+        self.scalarMap = cm.ScalarMappable(norm=self.norm, cmap=self.cmap)
+
+    def get_rgb(self, val):
+        return self.scalarMap.to_rgba(val)
+
+
 lock = Lock()
+colormap_name = "coolwarm"
+COL = MplColorHelper(colormap_name, 0, 8)
+sm = cm.ScalarMappable(cmap=colormap_name)
 
 
 def ffill(arr):
@@ -78,7 +97,7 @@ def read_simulated_data(this_file, analysis_methods):
     return ts, x, y, conditions
 
 
-def read_matrex_data(
+def analyse_focal_animal(
     this_file,
     analysis_methods,
     ts_simulated_animal,
@@ -90,6 +109,7 @@ def read_matrex_data(
     # track_ball_radius = analysis_methods.get("trackball_radius")
     # monitor_fps = analysis_methods.get("monitor_fps")
     # camera_fps = analysis_methods.get("camera_fps")
+    alpha_dictionary = {0.1: 0.2, 1.0: 0.4, 10.0: 0.6, 100000.0: 1}
     analyze_one_session_only = True
     BODY_LENGTH = analysis_methods.get("body_length")
     growth_condition = analysis_methods.get("growth_condition")
@@ -107,10 +127,14 @@ def read_matrex_data(
     elif this_file.suffix == ".csv":
         with open(this_file, mode="r") as f:
             df = pd.read_csv(f)
-    print(df.columns)
-    df["SensPosX"].replace(0.0, np.nan, inplace=True)
-    df["SensPosY"].replace(0.0, np.nan, inplace=True)
-    df["SensRotY"].replace(0.0, np.nan, inplace=True)
+    # print(df.columns)
+    df["GameObjectPosX"].replace(0.0, np.nan, inplace=True)
+    df["GameObjectPosZ"].replace(0.0, np.nan, inplace=True)
+    df["GameObjectRotY"].replace(0.0, np.nan, inplace=True)
+    # sens pos is the data from fictrac
+    # df["SensPosX"].replace(0.0, np.nan, inplace=True)
+    # df["SensPosY"].replace(0.0, np.nan, inplace=True)
+    # df["SensRotY"].replace(0.0, np.nan, inplace=True)
     df["Current Time"] = pd.to_datetime(
         df["Current Time"], format="%Y-%m-%d %H:%M:%S.%f"
     )
@@ -126,39 +150,71 @@ def read_matrex_data(
         except OSError as e:
             # If it fails, inform the user.
             print("Error: %s - %s." % (e.filename, e.strerror))
+    if analysis_methods.get("plotting_trajectory") == True:
+        fig, (ax1, ax2) = plt.subplots(
+            nrows=1, ncols=2, figsize=(18, 7), tight_layout=True
+        )
+        ax1.set_title("ISI")
+        ax2.set_title("Trial")
     for id in range(len(conditions)):
         this_range = (df["CurrentStep"] == id) & (df["CurrentTrial"] == 0)
-        fchop = str(df["Current Time"][this_range][0]).split(".")[0]
+        this_current_time = df["Current Time"][this_range]
+        if len(this_current_time) == 0:
+            break
+        fchop = str(this_current_time.iloc[0]).split(".")[0]
+        # fchop = str(df["Current Time"][this_range][0]).split(".")[0]
         fchop = re.sub(r"\s+", "_", fchop)
         fchop = re.sub(r":", "", fchop)
-
-        heading_direction = df["SensRotY"][this_range]
-        x = df["SensPosX"][this_range]
-        y = df["SensPosY"][this_range]
+        heading_direction = df["GameObjectRotY"][this_range]
+        x = df["GameObjectPosX"][this_range]
+        y = df["GameObjectPosZ"][this_range]
+        # heading_direction = df["SensRotY"][this_range]
+        # x = df["SensPosX"][this_range]
+        # y = df["SensPosY"][this_range]
         xy = np.vstack((x.to_numpy(), y.to_numpy()))
         xy = bfill(xy)
         ts = df["Current Time"][this_range]
         trial_no = df["CurrentTrial"][this_range]
         print(trial_no)
         if len(trial_no.value_counts()) > 1 & analyze_one_session_only == True:
-            return (
-                heading_direction_across_trials,
-                x_across_trials,
-                y_across_trials,
-                ts_across_trials,
-            )
-
+            break
         if generate_locust_vr_matrices:
             ## Needs to tune this part later to make this work. And then we probably dont need bfill nan anymore. probably
-            # loss, X, Y = removeNoiseVR(x.to_numpy(),y.to_numpy())
-            # loss = 1 - loss
-            loss = 0
-            rX, rY = rotate_vector(xy[0], xy[1], -conditions[id]["Mu"] * np.pi / 180)
+
+            # fig, (ax1, ax2) = plt.subplots(
+            #     nrows=1, ncols=2, figsize=(18, 7), tight_layout=True
+            # )
+            # ax1.set_title("raw trace")
+            # ax2.set_title("spacial discritisation")
+            # ax1.plot(xy[0], xy[1])
+            # trajectory_fig_path = (
+            #     this_file.parent / f"{experiment_id}_trajectory_{id}.png"
+            # )
+            # fig.savefig(trajectory_fig_path)
+
+            if id == 3:
+                print("ready to fight")
+            loss, X, Y = removeNoiseVR(xy[0], xy[1])
+            loss = 1 - loss
+            if len(X) == 0:
+                print("all is noise")
+                continue
+            # loss = 0
+            rX, rY = rotate_vector(X, Y, (conditions[id]["Mu"] + 90) * np.pi / 180)
             newindex = diskretize(rX, rY, BODY_LENGTH)
             dX = np.array([rX[i] for i in newindex]).T
             dY = np.array([rY[i] for i in newindex]).T
-            angles = heading_direction[newindex].to_numpy() * np.pi / 180
-            angles_listangles = np.array(ListAngles(dX, dY))
+            # ax2.plot(dX, dY)
+            # trajectory_fig_path = (
+            #     this_file.parent / f"{experiment_id}_trajectory_{id}.png"
+            # )
+            # fig.savefig(trajectory_fig_path)
+            # angles = heading_direction[newindex].to_numpy() * np.pi / 180
+            angles = np.array(ListAngles(dX, dY))
+            test = heading_direction.to_numpy()
+            angle1 = np.array([(test[i]) * np.pi / 180 for i in newindex]).T
+            plt.scatter(np.arange(angle1.shape[0]), angle1, c="b")
+            plt.scatter(np.arange(angles.shape[0]), angles, c="r")
             c = np.cos(angles)
             s = np.sin(angles)
             xm = np.sum(c) / len(angles)
@@ -239,10 +295,37 @@ def read_matrex_data(
                     data_columns=df_summary.columns,
                 )
                 store.close()
+        if analysis_methods.get("plotting_trajectory") == True:
+            if df_summary["density"][0] > 0:
+                # ax2.plot(
+                #     dX, dY, color=np.arange(len(dY)), alpha=df_curated.iloc[id]["alpha"]
+                # )
+                ax2.scatter(
+                    dX,
+                    dY,
+                    c=np.arange(len(dY)),
+                    marker=".",
+                    alpha=df_summary["order"].map(alpha_dictionary)[0],
+                )
+            else:
+                # ax1.plot(
+                #     dX, dY, alpha=df_curated.iloc[id]["alpha"]
+                # )
+                ax1.scatter(
+                    dX,
+                    dY,
+                    c=np.arange(len(dY)),
+                    marker=".",
+                    alpha=df_summary["order"].map(alpha_dictionary)[0],
+                )
+
         heading_direction_across_trials.append(heading_direction)
         x_across_trials.append(x)
         y_across_trials.append(y)
         ts_across_trials.append(ts)
+    trajectory_fig_path = this_file.parent / f"{experiment_id}_trajectory.png"
+    if analysis_methods.get("plotting_trajectory") == True:
+        fig.savefig(trajectory_fig_path)
     return (
         heading_direction_across_trials,
         x_across_trials,
@@ -302,6 +385,7 @@ def preprocess_matrex_data(thisDir, json_file):
             analysis_methods = json.loads(f.read())
     num_vr = 4
     for i in range(num_vr):
+        # i = i + 3
         vr_pattern = f"*SimulatedLocustsVR{i+1}*"
         found_result = find_file(thisDir, vr_pattern)
         if found_result is None:
@@ -349,7 +433,7 @@ def preprocess_matrex_data(thisDir, json_file):
                         x_focal_animal,
                         y_focal_animal,
                         ts_focal_animal,
-                    ) = read_matrex_data(
+                    ) = analyse_focal_animal(
                         this_file,
                         analysis_methods,
                         ts_simulated_animal,
@@ -363,7 +447,7 @@ def preprocess_matrex_data(thisDir, json_file):
                     x_focal_animal,
                     y_focal_animal,
                     ts_focal_animal,
-                ) = read_matrex_data(
+                ) = analyse_focal_animal(
                     found_result,
                     analysis_methods,
                     ts_simulated_animal,
@@ -374,10 +458,12 @@ def preprocess_matrex_data(thisDir, json_file):
 
 
 if __name__ == "__main__":
-    thisDir = r"C:\Users\neuroPC\Documents\20240818_134521"
+    thisDir = r"D:\MatrexVR_Swarm_Data\RunData\20240818_170807"
+    # thisDir = r"D:\MatrexVR_Swarm_Data\RunData\20240826_150826"
     json_file = r"C:\Users\neuroPC\Documents\GitHub\UnityDataAnalysis\analysis_methods_dictionary.json"
     json_file = {
         "overwrite_curated_dataset": True,
+        "plotting_trajectory": False,
         "body_length": 0.12,
         "growth_condition": "G",
         "generate_locust_vr_matrices": True,
