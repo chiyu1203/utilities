@@ -162,15 +162,11 @@ def analyse_focal_animal(
         if len(this_current_time) == 0:
             break
         fchop = str(this_current_time.iloc[0]).split(".")[0]
-        # fchop = str(df["Current Time"][this_range][0]).split(".")[0]
         fchop = re.sub(r"\s+", "_", fchop)
         fchop = re.sub(r":", "", fchop)
         heading_direction = df["GameObjectRotY"][this_range]
         x = df["GameObjectPosX"][this_range]
         y = df["GameObjectPosZ"][this_range]
-        # heading_direction = df["SensRotY"][this_range]
-        # x = df["SensPosX"][this_range]
-        # y = df["SensPosY"][this_range]
         xy = np.vstack((x.to_numpy(), y.to_numpy()))
         xy = bfill(xy)
         ts = df["Current Time"][this_range]
@@ -199,8 +195,7 @@ def analyse_focal_animal(
             if len(X) == 0:
                 print("all is noise")
                 continue
-            # loss = 0
-            rX, rY = rotate_vector(X, Y, (conditions[id]["Mu"] + 90) * np.pi / 180)
+            rX, rY = rotate_vector(X, Y, (conditions[id]["Mu"] - 90) * np.pi / 180)
             newindex = diskretize(rX, rY, BODY_LENGTH)
             dX = np.array([rX[i] for i in newindex]).T
             dY = np.array([rY[i] for i in newindex]).T
@@ -209,12 +204,12 @@ def analyse_focal_animal(
             #     this_file.parent / f"{experiment_id}_trajectory_{id}.png"
             # )
             # fig.savefig(trajectory_fig_path)
-            # angles = heading_direction[newindex].to_numpy() * np.pi / 180
             angles = np.array(ListAngles(dX, dY))
-            test = heading_direction.to_numpy()
-            angle1 = np.array([(test[i]) * np.pi / 180 for i in newindex]).T
-            plt.scatter(np.arange(angle1.shape[0]), angle1, c="b")
-            plt.scatter(np.arange(angles.shape[0]), angles, c="r")
+            # angles = heading_direction[newindex].to_numpy() * np.pi / 180
+            # test = heading_direction.to_numpy()
+            # angle1 = np.array([(test[i]) * np.pi / 180 for i in newindex]).T
+            # plt.scatter(np.arange(angle1.shape[0]), angle1, c="b")
+            # plt.scatter(np.arange(angles.shape[0]), angles, c="r")
             c = np.cos(angles)
             s = np.sin(angles)
             xm = np.sum(c) / len(angles)
@@ -300,6 +295,7 @@ def analyse_focal_animal(
                 # ax2.plot(
                 #     dX, dY, color=np.arange(len(dY)), alpha=df_curated.iloc[id]["alpha"]
                 # )
+                ##blue is earlier colour and yellow is later colour
                 ax2.scatter(
                     dX,
                     dY,
@@ -463,8 +459,8 @@ if __name__ == "__main__":
     json_file = r"C:\Users\neuroPC\Documents\GitHub\UnityDataAnalysis\analysis_methods_dictionary.json"
     json_file = {
         "overwrite_curated_dataset": True,
-        "plotting_trajectory": False,
-        "body_length": 0.12,
+        "plotting_trajectory": True,
+        "body_length": 12,
         "growth_condition": "G",
         "generate_locust_vr_matrices": True,
     }
