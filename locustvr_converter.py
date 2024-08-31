@@ -12,6 +12,7 @@ from useful_tools import find_file, find_nearest
 from matplotlib import cm
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from scipy.signal import savgol_filter
 
 """
 demo if you want to load packages from other directories
@@ -134,7 +135,7 @@ def analyse_focal_animal(
     # sens pos is the data from fictrac
     # df["SensPosX"].replace(0.0, np.nan, inplace=True)
     # df["SensPosY"].replace(0.0, np.nan, inplace=True)
-    # df["SensRotY"].replace(0.0, np.nan, inplace=True)
+    df["SensRotY"].replace(0.0, np.nan, inplace=True)
     df["Current Time"] = pd.to_datetime(
         df["Current Time"], format="%Y-%m-%d %H:%M:%S.%f"
     )
@@ -143,6 +144,32 @@ def analyse_focal_animal(
     experiment_id = re.sub(r":", "", experiment_id)
     curated_file_path = this_file.parent / f"{experiment_id}_XY.h5"
     summary_file_path = this_file.parent / f"{experiment_id}_score.h5"
+    if analysis_methods.get("analyse_turning_behaviour") == True:
+        trim_seconds = 1.0
+        df["elapsed_time"] = (
+            df["Current Time"] - df["Current Time"].min()
+        ).dt.total_seconds()
+        grouped = df.groupby(["CurrentTrial", "CurrentStep"])
+        tmp = grouped.apply(
+            lambda x: x[
+                (x["elapsed_time"] >= trim_seconds)
+                & (x["elapsed_time"] <= x["elapsed_time"].max() - trim_seconds)
+            ]
+        ).reset_index(drop=True)
+        tmp["dif_orientation"] = tmp["SensRotY"].diff()
+        tmp_grouped = tmp.groupby(["CurrentTrial", "CurrentStep"])
+        tmp["cumsum"] = tmp_grouped["dif_orientation"].transform(pd.Series.cumsum)
+
+        # df.groupby(["CurrentTrial", "CurrentStep"])["dif_orientation"].cumsum()
+        for name, entries in tmp_grouped:
+            plt.plot
+            # entries["dif_orientation"] = entries["SensRotY"].diff()
+            # print(entries["dif_orientation"].cumsum().head(10))
+            print(f'First 2 entries for the "{name}" category:')
+            print(30 * "-")
+            print(entries["cumsum"].head(5), "\n\n")
+            print(entries["SensRotY"].head(5), "\n\n")
+
     if overwrite_curated_dataset == True and curated_file_path.is_file():
         curated_file_path.unlink()
         try:
@@ -195,7 +222,7 @@ def analyse_focal_animal(
             if len(X) == 0:
                 print("all is noise")
                 continue
-            rX, rY = rotate_vector(X, Y, (conditions[id]["Mu"] - 90) * np.pi / 180)
+            rX, rY = rotate_vector(X, Y, -90 * np.pi / 180)
             newindex = diskretize(rX, rY, BODY_LENGTH)
             dX = np.array([rX[i] for i in newindex]).T
             dY = np.array([rY[i] for i in newindex]).T
@@ -231,6 +258,9 @@ def analyse_focal_animal(
             loss = [loss] * len(dX)
             o = [conditions[id]["Kappa"]] * len(dX)
             d = [conditions[id]["Density"]] * len(dX)
+            mu = [conditions[id]["Mu"]] * len(dX)
+            spe = [conditions[id]["LocustSpeed"]] * len(dX)
+
             G = [growth_condition] * len(dX)
 
             df_curated = pd.DataFrame(
@@ -241,6 +271,8 @@ def analyse_focal_animal(
                     "loss": loss,
                     "order": o,
                     "density": d,
+                    "mu": mu,
+                    "agent_speed": spe,
                     "groups": G,
                 }
             )
@@ -248,6 +280,8 @@ def analyse_focal_animal(
             loss = [loss[0]]
             o = [o[0]]
             d = [d[0]]
+            mu = [mu[0]]
+            spe = [spe[0]]
             G = [G[0]]
             V = [meanVector]
             MA = [meanAngle]
@@ -263,6 +297,8 @@ def analyse_focal_animal(
                     "loss": loss,
                     "order": o,
                     "density": d,
+                    "mu": mu,
+                    "agent_speed": spe,
                     "groups": G,
                     "mean_angle": MA,
                     "vector": V,
@@ -290,6 +326,23 @@ def analyse_focal_animal(
                     data_columns=df_summary.columns,
                 )
                 store.close()
+        if analysis_methods.get("analyse_turning_behaviour") == True:
+            print("analyse turning behaviour based on jaw vector")
+            # xy = bfill(xy)
+            # ts = df["Current Time"][this_range]
+            # trial_no = df["CurrentTrial"][this_range]
+            # heading_direction = df["GameObjectRotY"][this_range]
+        if analysis_methods.get("filtering_method") == "sg_filter":
+            x_all = savgol_filter(xy[0], 71, 3, axis=0)
+            y_all = savgol_filter(xy[1], 71, 3, axis=0)
+        else:
+            x_all = xy[0]
+            y_all = xy[1]
+        elapsed_time = (ts - ts.min()).dt.total_seconds()
+        df["elapsed_time"] = (
+            df["Current Time"] - df["Current Time"].min()
+        ).dt.total_seconds()
+
         if analysis_methods.get("plotting_trajectory") == True:
             if df_summary["density"][0] > 0:
                 # ax2.plot(
@@ -369,6 +422,45 @@ might be useful in the future
     # df["time_diff_ms"] = df["time_diff"].dt.total_seconds() * 1000
     # # calculate speed of each step
     # df["speed_mm_s"] = df["step_distance_mm"] / df["time_diff_ms"] * 1000
+
+
+    
+    if dir_list[0]==dir_list[1]:
+        for this_dir in dir_list[::num_vr]:
+            h5_dirs=find_file(this_dir,h5_pattern)
+            fig = plt.figure(figsize=(18, 5),tight_layout=True)
+            ax1 = plt.subplot2grid((1, 18), (0, 0),colspan=8)
+            ax2 = plt.subplot2grid((1, 18), (0, 8))
+            ax3 = plt.subplot2grid((1, 18), (0, 9),colspan=8)
+            ax4 = plt.subplot2grid((1, 18), (0, 17))
+            for idx,this_file in enumerate(h5_dirs):
+                this_color=colour_code[idx]
+                if this_file.stem in ['VR4_Swarm_2024-08-16_131719_score','VR4_Swarm_2024-08-16_145857_score']:
+                    continue
+                df = pd.read_hdf(this_file)
+                df_stim = df.loc[(df['loss'] < 0.05) & (df['distTotal'] >= 12)&(df ['density'] > 0)] 
+                df_stim = df_stim.reset_index(drop=True)
+                ax1.set_xscale('log')
+                ax1.set_ylim([-4,4])        
+                ax3.set_xscale('log')
+                ax3.set_ylim([1,2000])
+                ax1.scatter(df_stim['order'], df_stim['mean_angle'],c=this_color)
+                ax3.scatter(df_stim['order'], df_stim['distTotal'],c=this_color)
+                ax2.set_ylim([-4,4])
+                ax2.set_yticks([])
+                ax2.set_xticks([])
+                ax4.set_ylim([1,1000])
+                ax4.set_yticks([])
+                ax4.set_xticks([])
+                df_isi = df.loc[(df['loss'] < 0.05) & (df['distTotal'] >= 12)&(df ['density'] == 0)]
+                df_isi = df_isi.reset_index(drop=True)
+                if len(df_isi)>0:
+                    ax2.scatter(df_isi.iloc[0]['order']/2, df_isi.iloc[0]['mean_angle'],c=this_color)
+                    #ax2.scatter(df.iloc[-1]['order'], df.iloc[-1]['mean_angle'],c=this_color,alpha=0.2)
+                    ax4.scatter(df_isi.iloc[0]['order']/2, df_isi.iloc[0]['distTotal'],c=this_color)
+                    #ax4.scatter(df.iloc[-1]['order'], df.iloc[-1]['distTotal'],c=this_color,alpha=0.2)    
+
+
 """
 
 
@@ -454,8 +546,8 @@ def preprocess_matrex_data(thisDir, json_file):
 
 
 if __name__ == "__main__":
-    thisDir = r"D:\MatrexVR_Swarm_Data\RunData\20240818_170807"
-    # thisDir = r"D:\MatrexVR_Swarm_Data\RunData\20240826_150826"
+    # thisDir = r"D:\MatrexVR_Swarm_Data\RunData\20240818_170807"
+    thisDir = r"D:\MatrexVR_Swarm_Data\RunData\20240826_150826"
     json_file = r"C:\Users\neuroPC\Documents\GitHub\UnityDataAnalysis\analysis_methods_dictionary.json"
     json_file = {
         "overwrite_curated_dataset": True,
@@ -463,6 +555,8 @@ if __name__ == "__main__":
         "body_length": 12,
         "growth_condition": "G",
         "generate_locust_vr_matrices": True,
+        "analyse_turning_behaviour": False,
+        "filtering_method": "sg_filter",
     }
     tic = time.perf_counter()
     preprocess_matrex_data(thisDir, json_file)
