@@ -24,9 +24,9 @@ def update_csv_value(old_csv_path, new_csv_path):
 
 
 def load_temperature_data(txt_path):
-    if type(txt_path)==str:
-        txt_path=Path(txt_path)
-    if txt_path.suffix=='.txt':
+    if type(txt_path) == str:
+        txt_path = Path(txt_path)
+    if txt_path.suffix == ".txt":
         # data comes from EL-USB
         # instead of using the first column as index, use the second column to log in index as dateindex. This is easier for resample
         # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.resample.html
@@ -46,8 +46,15 @@ def load_temperature_data(txt_path):
         # this for milliseonds"L"
         # print(df.dtypes)
 
-    elif txt_path.suffix=='.csv':
-        print("Here to process data loaded in Bonsai")
+    elif txt_path.suffix == ".csv":
+        if str(txt_path.stem).startswith("DL220THP"):
+            df = pd.read_csv(
+                txt_path, parse_dates=[0], skiprows=8, index_col=0, header=0, sep=","
+            )
+            df.drop(df.columns[4], axis=1, inplace=True)
+            df = df.resample("1s").interpolate()
+        else:
+            print("Here to process data loaded in Bonsai")
 
     return df
 
@@ -408,9 +415,11 @@ def preprocess_fictrac_data(thisDir, json_file):
 
 
 if __name__ == "__main__":
-    thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24036\240801\coherence\session1"
-    json_file = r".\analysis_methods_dictionary.json"
-    tic = time.perf_counter()
-    preprocess_fictrac_data(thisDir, json_file)
-    toc = time.perf_counter()
-    print(f"it takes {toc-tic:0.4f} seconds to run the main function")
+    # thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24036\240801\coherence\session1"
+    # json_file = r".\analysis_methods_dictionary.json"
+    # tic = time.perf_counter()
+    # preprocess_fictrac_data(thisDir, json_file)
+    # toc = time.perf_counter()
+    # print(f"it takes {toc-tic:0.4f} seconds to run the main function")
+    this_file = r"Z:\Users\chiyu\DL220THP_Thermo1_240904_240908.csv"
+    load_temperature_data(this_file)
