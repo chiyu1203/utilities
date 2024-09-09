@@ -7,6 +7,27 @@ import fnmatch
 from pathlib import Path
 import glob
 import scipy.fftpack
+import scipy.io
+import pickle
+import pandas as pd
+
+
+def mat_converter(file):
+    if type(file) == str:
+        file = Path(file)
+    ##this function converted pandas dataframe into mat file
+    this_dir = file.parent
+    with open(file, "rb") as f:
+        tmp = pickle.load(f)
+    if isinstance(tmp, pd.DataFrame):
+        scipy.io.savemat(
+            this_dir / "behavioural_summary.mat",
+            mdict={"behavioural_summary": tmp.values},
+        )
+    elif isinstance(tmp, np.array):
+        scipy.io.savemat(
+            this_dir / "behavioural_summary.mat", mdict={"behavioural_summary": tmp}
+        )
 
 
 def calculate_fft(arr, sample_rate):
