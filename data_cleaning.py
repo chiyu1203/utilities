@@ -49,9 +49,15 @@ def load_temperature_data(txt_path):
     elif txt_path.suffix == ".csv":
         if str(txt_path.stem).startswith("DL220THP"):
             df = pd.read_csv(
-                txt_path, parse_dates=[0], skiprows=8, index_col=0, header=0, sep=","
+                txt_path,
+                parse_dates=[0],
+                dayfirst=True,
+                skiprows=8,
+                index_col=0,
+                header=0,
+                sep=",",
             )
-            df.drop(df.columns[4], axis=1, inplace=True)
+            df.drop(df.columns[3], axis=1, inplace=True)
             df = df.resample("1s").interpolate()
         else:
             print("Here to process data loaded in Bonsai")
@@ -348,7 +354,7 @@ def load_fictrac_data_file(this_file, analysis_methods):
     raw_data.loc[:, ["intergrated y position"]] = (
         raw_data.loc[:, ["intergrated y position"]] * track_ball_radius
     )
-    ## adjust the unit of the z vector based on the target frame rate of fictrac
+    ## adjust the unit of the z vector based on the target frame rate of fictrac to get angular velocity omega
     raw_data.loc[:, ["delta rotation vector lab z"]] = (
         raw_data.loc[:, ["delta rotation vector lab z"]] * camera_fps
     )
