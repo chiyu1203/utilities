@@ -129,8 +129,26 @@ def plot_multiple_variables(
         ax.set_ylim(yaxis_range)
 
 
-def find_file(thisDir, pattern):
-    file_check = fnmatch.filter(os.listdir(thisDir), pattern)
+def find_file(thisDir,pattern1,pattern2=None,include_matching_both=True):
+    all_files = os.listdir(thisDir)
+    matched_pattern1 = fnmatch.filter(all_files, pattern1)
+    
+    # Find files that match pattern2
+    if pattern2 !=None:
+        matched_pattern2 = fnmatch.filter(all_files, pattern2)
+        if include_matching_both:
+            file_check = list(set(matched_pattern1).union(matched_pattern2))
+        else:
+
+            # Avoid files that match both patterns by using set difference
+            only_pattern1 = set(matched_pattern1) - set(matched_pattern2)
+            only_pattern2 = set(matched_pattern2) - set(matched_pattern1)
+
+            # Combine both sets to get final result
+            file_check = list(only_pattern1.union(only_pattern2))
+    else:
+        file_check = matched_pattern1
+
     if len(file_check) == 0:
         print(f"no {pattern} found in {thisDir}. Let's leave this programme")
         return None
@@ -141,6 +159,7 @@ def find_file(thisDir, pattern):
         for i in range(len(file_check)):
             vid_list.append(Path(thisDir) / file_check[i])
         return vid_list
+
 
 
 def find_file_multiple_patterns(thisDir, patterns):
