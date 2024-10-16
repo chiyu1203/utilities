@@ -375,7 +375,7 @@ def load_fictrac_data_file(this_file, analysis_methods):
                     print("Error: %s - %s." % (e.filename, e.strerror))
 
     ### save the curated_database
-    if analysis_methods.get("debug_mode") == False:
+    if analysis_methods.get("save_output") == True:
         database_name = f"database_{file_name}.pickle"
         database_directory = this_file.parent.joinpath(database_name)
         if (overwrite_curated_dataset == False) and (
