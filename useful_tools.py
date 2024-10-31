@@ -10,6 +10,25 @@ import scipy.fftpack
 import scipy.io
 import pickle
 import pandas as pd
+import scipy.stats as st
+
+
+def get_fill_between_range(data, mean_data, using_confidence_interval=True):
+
+    ##to plot distribution with 95% confidence interval with t distribution (since the sample is usually not big)
+    if using_confidence_interval:
+        confidence_level = 0.95
+        cl95 = st.t.interval(
+            alpha=0.95, df=len(data) - 1, loc=np.mean(data), scale=st.sem(data)
+        )
+        # cl95=st.norm.interval(confidence_level,loc=mean_data,scale=st.sem(data))
+        dif_y1 = cl95[0][:]
+        dif_y2 = cl95[1][:]
+    else:
+        sem_response = np.std(data, axis=0, ddof=1) / np.sqrt(data.shape[0])
+        dif_y1 = mean_data + sem_response
+        dif_y2 = mean_data - sem_response
+    return dif_y1, dif_y2
 
 
 def mat_converter(file):
