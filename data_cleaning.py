@@ -1,15 +1,74 @@
 import pandas as pd
 import numpy as np
-import os
-import re
-import csv
-import json
+import os, math, re, csv, json, sys
 import time
 
 # import chardet
-import sys
 from pathlib import Path
 from useful_tools import find_file
+
+
+def diskretize(
+    x, y, bodylength
+):  # discretize data into equidistant points, using body lengts (https://stackoverflow.com/questions/19117660/how-to-generate-equispaced-interpolating-values)
+    # code writen by Sercan Sayin
+    tol = bodylength  # 10cm ,roughly 2BL
+    i, idx = 0, [0]
+    while i < len(x) - 1:
+        total_dist = 0
+        for j in range(i + 1, len(x)):
+            total_dist = math.sqrt((x[j] - x[i]) ** 2 + (y[j] - y[i]) ** 2)
+            if total_dist > tol:
+                idx.append(j)
+                break
+        i = j + 1
+
+    return idx
+
+
+def ffill(arr):
+    mask = np.isnan(arr)
+    if arr.ndim == 1:
+        Warning("work in progress")
+        # idx = np.where(~mask, np.arange(mask.shape[0]), 0)
+        # np.maximum.accumulate(idx, out=idx)
+        # out = arr[np.arange(idx.shape[0])[None], idx]
+    elif arr.ndim == 2:
+        idx = np.where(~mask, np.arange(mask.shape[1]), 0)
+        np.maximum.accumulate(idx, axis=1, out=idx)
+        out = arr[np.arange(idx.shape[0])[:, None], idx]
+    return out
+
+
+# Simple solution for bfill provided by financial_physician in comment below
+def bfill(arr):
+    if arr.ndim == 1:
+        return ffill(arr[::-1])[::-1]
+    elif arr.ndim == 2:
+        return ffill(arr[:, ::-1])[:, ::-1]
+
+
+def removeFictracNoise(X, Y, analysis_methods):
+    time_series_analysis = analysis_methods.get("time_series_analysis")
+    travel_distance_fbf = np.sqrt(np.add(np.square(np.diff(X)), np.square(np.diff(Y))))
+
+    if time_series_analysis:
+        noise_index = np.argwhere(travel_distance_fbf > 0.3)#arbitary threshold based on VR4_2024-11-16_155242
+        X[noise_index.T] = np.nan
+        Y[noise_index.T] = np.nan
+        # xy = ffill(np.vstack((X, Y)))
+        # X = xy[0]
+        # Y = xy[1]
+        good_track_ratio = (len(X) - noise_index.shape[0]) / len(X)
+    else:
+        noise_index = np.argwhere(travel_distance_fbf > 0.4)#arbitary threshold based on several videos in Swarm scene
+        Xraw = X
+        NewX = np.delete(np.diff(X), noise_index.T)
+        NewY = np.delete(np.diff(Y), noise_index.T)
+        X = np.nancumsum(NewX)
+        Y = np.nancumsum(NewY)
+        good_track_ratio = len(X) / len(Xraw)
+    return good_track_ratio, X, Y
 
 
 def update_csv_value(old_csv_path, new_csv_path):

@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import shutil
-import time
 import fnmatch
 from pathlib import Path
 import glob
@@ -12,8 +11,9 @@ import pickle
 import pandas as pd
 import scipy.stats as st
 
+
 def findLongestConseqSubseq(arr, n):
-    '''We insert all the array elements into unordered set. from https://www.geeksforgeeks.org/maximum-consecutive-numbers-present-array/'''
+    """We insert all the array elements into unordered set. from https://www.geeksforgeeks.org/maximum-consecutive-numbers-present-array/"""
     S = set()
     for i in range(n):
         S.add(arr[i])
@@ -22,18 +22,18 @@ def findLongestConseqSubseq(arr, n):
     # then update optimal length
     ans = 0
     for i in range(n):
-        
+
         # if current element is the starting
         # element of a sequence
         if S.__contains__(arr[i]):
-            
+
             # Then check for next elements in the
             # sequence
             j = arr[i]
-            
+
             # increment the value of array element
             # and repeat search in the set
-            while(S.__contains__(j)):
+            while S.__contains__(j):
                 j += 1
 
             # Update optimal length if this length
@@ -41,6 +41,7 @@ def findLongestConseqSubseq(arr, n):
             # incremented one by one
             ans = max(ans, j - arr[i])
     return ans
+
 
 def get_fill_between_range(data, mean_data, using_confidence_interval=True):
 
