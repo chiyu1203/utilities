@@ -53,7 +53,12 @@ def removeFictracNoise(X, Y, analysis_methods):
     travel_distance_fbf = np.sqrt(np.add(np.square(np.diff(X)), np.square(np.diff(Y))))
 
     if time_series_analysis:
-        noise_index = np.argwhere(travel_distance_fbf > 0.3)#arbitary threshold based on VR4_2024-11-16_155242
+        noise_index = np.argwhere(travel_distance_fbf > 1.0)
+        """
+        arbitary threshold based on VR4_2024-11-16_155210: 0.3 can remove fictrac bad tracking, 
+        but at the risk of removing running data. 1.0 is safer or 
+        follow what I did with bonfic data, extract potential epochs with 0.5 for 20 frames and 
+        then apply fft to get auc value during <1 Hz"""
         X[noise_index.T] = np.nan
         Y[noise_index.T] = np.nan
         # xy = ffill(np.vstack((X, Y)))
@@ -61,7 +66,9 @@ def removeFictracNoise(X, Y, analysis_methods):
         # Y = xy[1]
         good_track_ratio = (len(X) - noise_index.shape[0]) / len(X)
     else:
-        noise_index = np.argwhere(travel_distance_fbf > 0.4)#arbitary threshold based on several videos in Swarm scene
+        noise_index = np.argwhere(
+            travel_distance_fbf > 0.4
+        )  # arbitary threshold based on several videos in Swarm scene
         Xraw = X
         NewX = np.delete(np.diff(X), noise_index.T)
         NewY = np.delete(np.diff(Y), noise_index.T)
