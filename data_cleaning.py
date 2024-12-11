@@ -7,6 +7,35 @@ import time
 from pathlib import Path
 from useful_tools import find_file
 
+def findLongestConseqSubseq(arr, n):
+    """We insert all the array elements into unordered set. from https://www.geeksforgeeks.org/maximum-consecutive-numbers-present-array/"""
+    S = set()
+    for i in range(n):
+        S.add(arr[i])
+
+    # check each possible sequence from the start
+    # then update optimal length
+    ans = 0
+    for i in range(n):
+
+        # if current element is the starting
+        # element of a sequence
+        if S.__contains__(arr[i]):
+
+            # Then check for next elements in the
+            # sequence
+            j = arr[i]
+
+            # increment the value of array element
+            # and repeat search in the set
+            while S.__contains__(j):
+                j += 1
+
+            # Update optimal length if this length
+            # is more. To get the length as it is
+            # incremented one by one
+            ans = max(ans, j - arr[i])
+    return ans
 
 def diskretize(
     x, y, bodylength
