@@ -253,6 +253,49 @@ def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Z
                 & (stim_info.iloc[:, 2] == stim_info.iloc[:, 3]),
             ]
         stim_info["stim_type"] = np.select(filters, stim_type)
+    elif visual_paradigm_name.lower() == "conflict":
+        stim_variable = []
+        stimulus_timestamp = []
+        for row in range(0, np.shape(stim_info)[0]):
+            for col in range(2, np.shape(stim_info)[1]-1):
+                if col==17:
+                    stim_variable.append(int(stim_info.iloc[row,col].split("=", 1)[1].split("}", 1)[0]))
+                else:
+                    stim_variable.append(int(float(stim_info.iloc[row,col].split("=", 1)[1])))
+            timestamp=stim_info.loc[row, "Value"]         
+            stim_variable.append(float(timestamp.replace(")", "")))
+        stim_variable = np.array(stim_variable).reshape((len(stim_info), -1))
+        column_names = ["LocationBeginX1","LocationEndX1","LocationBeginZ1","LocationEndZ1","PolarBeginR1","PolarEndR1","PolarBeginDegree1","PolarEndDegree1","Phase1","PreMovDuration1","Duration","PostMovDuration1","ISI1","LocustObj1","ReverseZ1","LocustTexture1","ts",
+        ]
+        stim_info = pd.DataFrame(stim_variable, columns=column_names)
+        stim_type = ["cc_back_slow","cc_back_medium","cc_back_fast","cc_front_slow","cc_front_medium","cc_front_fast","c_back_slow","c_back_medium","c_back_fast","c_front_slow","c_front_medium","c_front_fast"]
+        filters = [
+                (stim_info["Duration"] == 25)
+                & (stim_info["Phase1"]==180) & (stim_info["PolarEndDegree1"]-stim_info["PolarBeginDegree1"])<0,
+                (stim_info["Duration"] == 12)
+                & (stim_info["Phase1"]==180) & (stim_info["PolarEndDegree1"]-stim_info["PolarBeginDegree1"])<0,
+                (stim_info["Duration"] == 8)
+                & (stim_info["Phase1"]==180) & (stim_info["PolarEndDegree1"]-stim_info["PolarBeginDegree1"])<0,
+                (stim_info["Duration"] == 25)
+                & (stim_info["Phase1"]==0) & (stim_info["PolarEndDegree1"]-stim_info["PolarBeginDegree1"])<0,
+                (stim_info["Duration"] == 12)
+                & (stim_info["Phase1"]==0) & (stim_info["PolarEndDegree1"]-stim_info["PolarBeginDegree1"])<0,
+                (stim_info["Duration"] == 8)
+                & (stim_info["Phase1"]==0) & (stim_info["PolarEndDegree1"]-stim_info["PolarBeginDegree1"])<0,
+                (stim_info["Duration"] == 25)
+                & (stim_info["Phase1"]==180) & (stim_info["PolarEndDegree1"]-stim_info["PolarBeginDegree1"])>0,
+                (stim_info["Duration"] == 12)
+                & (stim_info["Phase1"]==180) & (stim_info["PolarEndDegree1"]-stim_info["PolarBeginDegree1"])>0,
+                (stim_info["Duration"] == 8)
+                & (stim_info["Phase1"]==180) & (stim_info["PolarEndDegree1"]-stim_info["PolarBeginDegree1"])>0,
+                (stim_info["Duration"] == 25)
+                & (stim_info["Phase1"]==0) & (stim_info["PolarEndDegree1"]-stim_info["PolarBeginDegree1"])>0,
+                (stim_info["Duration"] == 12)
+                & (stim_info["Phase1"]==0) & (stim_info["PolarEndDegree1"]-stim_info["PolarBeginDegree1"])>0,
+                (stim_info["Duration"] == 8)
+                & (stim_info["Phase1"]==0) & (stim_info["PolarEndDegree1"]-stim_info["PolarBeginDegree1"])>0,
+            ]
+        stim_info["stim_type"] = np.select(filters, stim_type)
     else:
 
         col_index = [2, 3, 4, 5, 7, 11, 13, 15, 17]
@@ -516,11 +559,12 @@ def preprocess_fictrac_data(thisDir, json_file):
 
 
 if __name__ == "__main__":
-    # thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24036\240801\coherence\session1"
-    # json_file = r".\analysis_methods_dictionary.json"
-    # tic = time.perf_counter()
-    # preprocess_fictrac_data(thisDir, json_file)
-    # toc = time.perf_counter()
-    # print(f"it takes {toc-tic:0.4f} seconds to run the main function")
-    this_file = r"Z:\Users\chiyu\DL220THP_Thermo1_240904_240908.csv"
-    load_temperature_data(this_file)
+    #thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24036\240801\coherence\session1"
+    thisDir = r"C:\Users\neuroLaptop\Documents\GN25040\250106\speed\session1"
+    json_file = r".\analysis_methods_dictionary.json"
+    tic = time.perf_counter()
+    preprocess_fictrac_data(thisDir, json_file)
+    toc = time.perf_counter()
+    print(f"it takes {toc-tic:0.4f} seconds to run the main function")
+    #this_file = r"Z:\Users\chiyu\DL220THP_Thermo1_240904_240908.csv"
+    #load_temperature_data(this_file)
