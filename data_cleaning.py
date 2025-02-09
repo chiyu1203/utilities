@@ -120,6 +120,29 @@ def update_csv_value(old_csv_path, new_csv_path):
     return None
 
 
+def update_csv_value_pd(old_csv_path, new_csv_path, old_column_number):
+    tmp = pd.read_csv(old_csv_path, delimiter=",", header=0, index_col=None)
+    new = tmp["Item2"].str.split(";", n=1, expand=True)
+    tmp["Temperature"] = new[0]
+    tmp["Humidity"] = new[1]
+    tmp.drop(columns=["Item2"], inplace=True)
+    # tmp["Item2"]=tmp["Item2"].str.split(";",expand=False)
+    # tmp["Item2"]=tmp["Item2"].str.replace(";",",")
+    tmp.reset_index(inplace=True)
+    tmp.rename(columns={"index": "Value", "Item1": "Timestamp"}, inplace=True)
+    new_csv = np.genfromtxt(new_csv_path, delimiter=",", dtype=int)
+    if new_csv.shape[0] > tmp.shape[0]:
+        new_csv = new_csv[: tmp.shape[0]]
+    elif new_csv.shape[0] < tmp.shape[0]:
+        test = np.ones(tmp.shape[0] - new_csv.shape[0])
+        new_csv = np.insert(new_csv, obj=0, values=test)
+    else:
+        pass
+    tmp.iloc[:, old_column_number] = new_csv
+    tmp.to_csv(old_csv_path, index=False)
+    return None
+
+
 def load_temperature_data(txt_path):
     if type(txt_path) == str:
         txt_path = Path(txt_path)
@@ -608,11 +631,15 @@ def preprocess_fictrac_data(thisDir, json_file):
 
 
 if __name__ == "__main__":
+
     # thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24036\240801\coherence\session1"
-    thisDir = r"C:\Users\neuroLaptop\Documents\GN25040\250106\speed\session1"
-    json_file = r".\analysis_methods_dictionary.json"
+    # thisDir = r"C:\Users\neuroLaptop\Documents\GN25040\250106\speed\session1"
+    # json_file = r".\analysis_methods_dictionary.json"
     tic = time.perf_counter()
-    preprocess_fictrac_data(thisDir, json_file)
+    old_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24123\241209\coherence\session1\lux3_2024-12-09T12_02_03.csv"
+    new_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24123\241209\coherence\session1\camera3_2024-12-09T12_02_03.csv"
+    update_csv_value_pd(old_csv_path, new_csv_path, 0)
+    # preprocess_fictrac_data(thisDir, json_file)
     toc = time.perf_counter()
     print(f"it takes {toc-tic:0.4f} seconds to run the main function")
     # this_file = r"Z:\Users\chiyu\DL220THP_Thermo1_240904_240908.csv"
