@@ -11,45 +11,53 @@ import pickle
 import pandas as pd
 import scipy.stats as st
 
-#https://stackoverflow.com/questions/40642061/how-to-set-axis-ticks-in-multiples-of-pi-python-matplotlib
-def multiple_formatter(denominator=2, number=np.pi, latex='\pi'):
+
+# https://stackoverflow.com/questions/40642061/how-to-set-axis-ticks-in-multiples-of-pi-python-matplotlib
+def multiple_formatter(denominator=2, number=np.pi, latex="\pi"):
     def gcd(a, b):
         while b:
-            a, b = b, a%b
+            a, b = b, a % b
         return a
+
     def _multiple_formatter(x, pos):
         den = denominator
-        num = int(np.rint(den*x/number))
-        com = gcd(num,den)
-        (num,den) = (int(num/com),int(den/com))
-        if den==1:
-            if num==0:
-                return r'$0$'
-            if num==1:
-                return r'$%s$'%latex
-            elif num==-1:
-                return r'$-%s$'%latex
+        num = int(np.rint(den * x / number))
+        com = gcd(num, den)
+        (num, den) = (int(num / com), int(den / com))
+        if den == 1:
+            if num == 0:
+                return r"$0$"
+            if num == 1:
+                return r"$%s$" % latex
+            elif num == -1:
+                return r"$-%s$" % latex
             else:
-                return r'$%s%s$'%(num,latex)
+                return r"$%s%s$" % (num, latex)
         else:
-            if num==1:
-                return r'$\frac{%s}{%s}$'%(latex,den)
-            elif num==-1:
-                return r'$\frac{-%s}{%s}$'%(latex,den)
+            if num == 1:
+                return r"$\frac{%s}{%s}$" % (latex, den)
+            elif num == -1:
+                return r"$\frac{-%s}{%s}$" % (latex, den)
             else:
-                return r'$\frac{%s%s}{%s}$'%(num,latex,den)
+                return r"$\frac{%s%s}{%s}$" % (num, latex, den)
+
     return _multiple_formatter
 
+
 class Multiple:
-    def __init__(self, denominator=2, number=np.pi, latex='\pi'):
+    def __init__(self, denominator=2, number=np.pi, latex="\pi"):
         self.denominator = denominator
         self.number = number
         self.latex = latex
+
     def locator(self):
         return plt.MultipleLocator(self.number / self.denominator)
+
     def formatter(self):
-        return plt.FuncFormatter(multiple_formatter(self.denominator, self.number, self.latex))
-    
+        return plt.FuncFormatter(
+            multiple_formatter(self.denominator, self.number, self.latex)
+        )
+
 
 def get_fill_between_range(data, mean_data, using_confidence_interval=True):
 
@@ -88,15 +96,16 @@ def mat_converter(file):
 
 
 def calculate_fft(arr, sample_rate):
+    plot_result = False
     # x = np.linspace(0.0, N*T, N)
     N = arr.size
     yf = scipy.fftpack.fft(arr)
     # xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
     xf = scipy.fftpack.fftfreq(N, d=1 / sample_rate)[: N // 2]
-
-    plt.plot(xf, 2.0 / N * np.abs(yf[0 : N // 2]))
-    plt.grid()
-    plt.show()
+    if plot_result:
+        plt.plot(xf, 2.0 / N * np.abs(yf[0 : N // 2]))
+        plt.grid()
+        plt.show()
     return yf, xf
 
 
