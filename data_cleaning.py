@@ -189,8 +189,15 @@ def load_temperature_data(txt_path):
     return df
 
 
-def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Zball"):
+def sorting_trial_info(stim_info, analysis_methods,exp_date):
+    visual_paradigm_name = analysis_methods.get("experiment_name")
+    exp_place = analysis_methods.get("exp_place")
+    camera_fps=analysis_methods.get("camera_fps")
+    pre_stim_interval = analysis_methods.get("prestim_duration")
     stim_info = stim_info.reset_index()
+    first_event_time=stim_info.iloc[0,0]/camera_fps
+    if first_event_time>pre_stim_interval:
+        analysis_methods.update({"prestim_duration":first_event_time})
     raw_column_number = stim_info.shape[1]
     if visual_paradigm_name.lower() == "gratings":
         stim_variable = []
@@ -636,14 +643,15 @@ def preprocess_fictrac_data(thisDir, json_file):
 
 if __name__ == "__main__":
 
-    # thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24036\240801\coherence\session1"
+    #thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24036\240801\coherence\session1"
+    thisDir = r"C:\Users\neuroLaptop\Documents\GN25006\250312\receding\session1"
     # thisDir = r"C:\Users\neuroLaptop\Documents\GN25040\250106\speed\session1"
-    # json_file = r".\analysis_methods_dictionary.json"
+    json_file = r".\analysis_methods_dictionary.json"
     tic = time.perf_counter()
-    old_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24136\241210\coherence\session1\lux4_2024-12-10T14_45_33.csv"
-    new_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24136\241210\coherence\session1\camera4_2024-12-10T14_45_33.csv"
-    update_csv_value_pd(old_csv_path, new_csv_path, 0)
-    # preprocess_fictrac_data(thisDir, json_file)
+    #old_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24136\241210\coherence\session1\lux4_2024-12-10T14_45_33.csv"
+    #new_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24136\241210\coherence\session1\camera4_2024-12-10T14_45_33.csv"
+    #update_csv_value_pd(old_csv_path, new_csv_path, 0)
+    preprocess_fictrac_data(thisDir, json_file)
     toc = time.perf_counter()
     print(f"it takes {toc-tic:0.4f} seconds to run the main function")
     # this_file = r"Z:\Users\chiyu\DL220THP_Thermo1_240904_240908.csv"
