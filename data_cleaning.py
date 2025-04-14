@@ -41,9 +41,10 @@ def findLongestConseqSubseq(arr, n):
 
 def diskretize(
     x, y, bodylength
-):  # discretize data into equidistant points, using body lengts (https://stackoverflow.com/questions/19117660/how-to-generate-equispaced-interpolating-values)
-    # code writen by Sercan Sayin
-    tol = bodylength  # 10cm ,roughly 2BL
+):  # discretize data into equidistant points, using body length (https://stackoverflow.com/questions/19117660/how-to-generate-equispaced-interpolating-values)
+    # code writen by Sercan Sayin and described in (https://www.science.org/doi/10.1126/science.adq7832)
+    # the source code can be found in (https://zenodo.org/records/14355590)
+    tol = bodylength  # 12cm ,roughly 3BL
     i, idx = 0, [0]
     while i < len(x) - 1:
         total_dist = 0
@@ -408,13 +409,15 @@ def sorting_trial_info(stim_info, visual_paradigm_name="coherence", exp_place="Z
         )
         if visual_paradigm_name.endswith("sities"):
             stim_variable_direction = (
-                stim_info["VelX"] * stim_info["numDots"] / abs(stim_info["VelX"])
+                stim_info["VelX"] * stim_info["numDots"] / abs(stim_info["VelY"])+abs(stim_info["VelX"])
             )
         elif visual_paradigm_name.lower() == "coherence":
             stim_variable_direction = (
-                stim_info["VelX"] * stim_info["Coherence"] / abs(stim_info["VelX"])
-            )
+                (stim_info["VelY"]+stim_info["VelX"]) * stim_info["Coherence"] / (abs(stim_info["VelY"])+abs(stim_info["VelX"]))
+            )## add the plus here because when inserting the probe from anterior side, the dots move along the y axis
         # positive value means dots moves from right to left in a window, allocentric orientation in a panoramic setup: counterclock wise
+        # if np.isnan(stim_variable_direction).any():
+        #     stim_variable_direction=stim_variable_direction.fillna(0)
         stim_info["stim_type"] = -1 * stim_variable_direction.astype(int)
         stim_type = np.sort(stim_info.stim_type.unique()).tolist()
     return stim_info, stim_type
@@ -640,8 +643,8 @@ if __name__ == "__main__":
     # thisDir = r"C:\Users\neuroLaptop\Documents\GN25040\250106\speed\session1"
     # json_file = r".\analysis_methods_dictionary.json"
     tic = time.perf_counter()
-    old_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24136\241210\coherence\session1\lux4_2024-12-10T14_45_33.csv"
-    new_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24136\241210\coherence\session1\camera4_2024-12-10T14_45_33.csv"
+    old_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\lux4_2024-12-09T12_02_03.csv"
+    new_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\camera4_2024-12-09T12_02_03.csv"
     update_csv_value_pd(old_csv_path, new_csv_path, 0)
     # preprocess_fictrac_data(thisDir, json_file)
     toc = time.perf_counter()
