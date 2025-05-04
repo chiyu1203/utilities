@@ -6,6 +6,46 @@ import time
 # import chardet
 from pathlib import Path
 from useful_tools import find_file
+from scipy.interpolate import interp1d
+
+def interp_fill(arr):
+    arr = arr.copy()
+    if arr.ndim == 1:
+        return _interp_1d(arr)
+    elif arr.ndim == 2:
+        return np.apply_along_axis(_interp_1d, axis=1, arr=arr)
+
+def _interp_1d(x):
+    window_size=3
+    n = len(x)
+    isnan = np.isnan(x)
+    if not isnan.any():
+        return x
+
+    valid_idx = np.where(~isnan)[0]
+    valid_vals = x[valid_idx]
+
+    # If fewer than 3 values exist, use basic interpolation
+    if len(valid_idx) < window_size:
+        return np.interp(np.arange(n), valid_idx, valid_vals)
+
+    result = x.copy()
+
+    # Interpolate inside using up to 3 nearest neighbors
+    for i in np.where(isnan)[0]:
+        # Find nearest 3 neighbors (could be before or after)
+        nearby = valid_idx[np.argsort(np.abs(valid_idx - i))][:window_size]
+        nearby_vals = x[nearby]
+
+        # Sort for interpolation
+        sorted_idx = np.sort(nearby)
+        sorted_vals = x[sorted_idx]
+
+        # Linear interpolation
+        f = interp1d(sorted_idx, sorted_vals, kind='linear', fill_value="extrapolate")
+        result[i] = f(i)
+
+    return result
 
 
 def findLongestConseqSubseq(arr, n):
@@ -61,10 +101,9 @@ def diskretize(
 def ffill(arr):
     mask = np.isnan(arr)
     if arr.ndim == 1:
-        Warning("work in progress")
-        # idx = np.where(~mask, np.arange(mask.shape[0]), 0)
-        # np.maximum.accumulate(idx, out=idx)
-        # out = arr[np.arange(idx.shape[0])[None], idx]
+        idx = np.where(~mask, np.arange(mask.shape[0]), 0)
+        np.maximum.accumulate(idx, out=idx)
+        out = arr[idx]
     elif arr.ndim == 2:
         idx = np.where(~mask, np.arange(mask.shape[1]), 0)
         np.maximum.accumulate(idx, axis=1, out=idx)
@@ -73,6 +112,7 @@ def ffill(arr):
 
 
 # Simple solution for bfill provided by financial_physician in comment below
+#https://stackoverflow.com/questions/41190852/most-efficient-way-to-forward-fill-nan-values-in-numpy-array
 def bfill(arr):
     if arr.ndim == 1:
         return ffill(arr[::-1])[::-1]
