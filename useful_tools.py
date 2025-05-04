@@ -94,6 +94,13 @@ def mat_converter(file):
             this_dir / "behavioural_summary.mat", mdict={"behavioural_summary": tmp}
         )
 
+def column_name_list(number,name):
+    #genearate a list of column names with a given number and name
+    #for example: number=5, name="animal" will generate ["animal0","animal1","animal2","animal3","animal4"]
+    c_name_list=[]
+    for i in range(number):
+        c_name_list.append(f"{name}{i}")
+    return c_name_list
 
 def calculate_fft(arr, sample_rate):
     plot_result = False
