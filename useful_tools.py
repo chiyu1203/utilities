@@ -57,26 +57,36 @@ class Multiple:
         return plt.FuncFormatter(
             multiple_formatter(self.denominator, self.number, self.latex)
         )
-
-
-def get_fill_between_range(data, mean_data, using_confidence_interval=True):
-
-    ##to plot distribution with 95% confidence interval with t distribution (since the sample is usually not big)
-    if using_confidence_interval:
-        confidence_level = 0.95
-        cl95 = st.t.interval(
-            alpha=0.95, df=len(data) - 1, loc=np.mean(data), scale=st.sem(data)
-        )
-        # cl95=st.norm.interval(confidence_level,loc=mean_data,scale=st.sem(data))
-        dif_y1 = cl95[0][:]
-        dif_y2 = cl95[1][:]
+def get_fill_between_range(data,confidence_interval=True,circular_statistics=False):
+    if circular_statistics:
+        mean_data=st.circmean(data,high=180,low=-180,axis=0)
+        if confidence_interval:
+            pass
+        else:
+            #sem_response = st.circstd(data, axis=0, ddof=1) / np.sqrt(data.shape[0])
+            std_response = st.circstd(data,high=180,low=-180,axis=0)
+            dif_y1=mean_data + std_response
+            dif_y2=mean_data - std_response        
     else:
-        sem_response = np.std(data, axis=0, ddof=1) / np.sqrt(data.shape[0])
-        dif_y1 = mean_data + sem_response
-        dif_y2 = mean_data - sem_response
-    return dif_y1, dif_y2
-
-
+        mean_data=np.nanmean(data,axis=0)
+        sem_response = np.nanstd(data, axis=0, ddof=1) / np.sqrt(data.shape[0])
+        if confidence_interval:
+            ##to plot distribution with 95% confidence interval with t distribution (since the sample is usually not big)
+            confidence_level = 0.95
+            
+            sem_response = np.nanstd(data, axis=0, ddof=1) / np.sqrt(data.shape[0])
+            cl95=st.t.interval(confidence=confidence_level, df=len(data)-1, loc=mean_data, scale=sem_response)
+            #cl95=st.norm.interval(confidence_level,loc=mean_data,scale=st.sem(data))
+            dif_y1=cl95[0][:]
+            dif_y2=cl95[1][:]
+            # a = 1.0 * np.array(data)
+            # n = len(a)
+            # m, se = np.mean(a), scipy.stats.sem(a)
+            # h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
+        else:
+            dif_y1=mean_data + sem_response
+            dif_y2=mean_data - sem_response
+    return dif_y1,dif_y2
 def mat_converter(file):
     if type(file) == str:
         file = Path(file)
