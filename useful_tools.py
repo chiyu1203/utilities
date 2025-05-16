@@ -1,16 +1,29 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-import shutil
-import fnmatch
+import os,json,glob,pickle,fnmatch,shutil
 from pathlib import Path
-import glob
 import scipy.fftpack
 import scipy.io
-import pickle
 import pandas as pd
 import scipy.stats as st
 
+def read_seq_config(file_path):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+
+    # Extract the list of sequences
+    sequences = data['sequences']
+
+    # Create the DataFrame with the desired columns
+    df = pd.DataFrame([
+        {
+            'sceneName': item.get('sceneName'),
+            'Duration': item.get('duration'),
+            'configFile': item.get('parameters', {}).get('configFile')
+        }
+        for item in sequences
+    ])
+    return df
 
 # https://stackoverflow.com/questions/40642061/how-to-set-axis-ticks-in-multiples-of-pi-python-matplotlib
 def multiple_formatter(denominator=2, number=np.pi, latex="\pi"):

@@ -122,7 +122,7 @@ def bfill(arr):
 
 def removeFictracNoise(X, Y, analysis_methods):
     time_series_analysis = analysis_methods.get("time_series_analysis")
-    travel_distance_fbf = np.sqrt(np.add(np.square(np.diff(X)), np.square(np.diff(Y))))
+    travel_distance_fbf = euclidean_distance(X,Y)
 
     if time_series_analysis:
         noise_index = np.argwhere(travel_distance_fbf > 1.0)
@@ -149,6 +149,8 @@ def removeFictracNoise(X, Y, analysis_methods):
         good_track_ratio = len(X) / len(Xraw)
     return good_track_ratio, X, Y
 
+def euclidean_distance(X,Y):
+    return np.sqrt(np.add(np.square(np.diff(X)), np.square(np.diff(Y))))
 
 def update_csv_value(old_csv_path, new_csv_path):
     with open(old_csv_path, "r") as x:
