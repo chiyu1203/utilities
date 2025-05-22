@@ -242,7 +242,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
     if first_event_time>pre_stim_interval:
         analysis_methods.update({"prestim_duration":first_event_time})
     raw_column_number = stim_info.shape[1]
-    if visual_paradigm_name.lower() == "gratings":
+    if visual_paradigm_name.lower() == "gratings" and exp_place.lower() != "zball":
         stim_variable = []
         stimulus_timestamp = []
         for row in range(0, len(stim_info)):
@@ -329,7 +329,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 & (stim_info.iloc[:, 2] == stim_info.iloc[:, 3]),
             ]
         stim_info["stim_type"] = np.select(filters, stim_type)
-    elif visual_paradigm_name.lower() == "conflict" or visual_paradigm_name.lower() == "looming" or visual_paradigm_name.lower() == "receding":
+    elif visual_paradigm_name.lower() == "conflict" or visual_paradigm_name.lower() == "looming" or visual_paradigm_name.lower() == "receding" or visual_paradigm_name.lower() == "gratings":
         stim_variable = []
         stimulus_timestamp = []
         for row in range(0, np.shape(stim_info)[0]):
@@ -351,7 +351,17 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
         this_column_names=default_column_names[:stim_variable.shape[1]]
         this_column_names.append("ts")
         stim_info = pd.DataFrame(stim_variable, columns=this_column_names)
+        #stim_info.loc[:, ["LocustTexture1", "ReverseZ1"]]=stim_info.loc[:, ["LocustTexture1", "ReverseZ1"]].astype(int) did not work
+        stim_info["LocustTexture1"] = stim_info["LocustTexture1"].astype(int)
+        stim_info["ReverseZ1"] = stim_info["ReverseZ1"].astype(int)
+        stim_info["LocustObj1"] = stim_info["LocustObj1"].astype(int)
+        stim_info["LocustTexture1"] = stim_info["LocustTexture1"].astype(int)
+        stim_info["PolarBeginDegree1"] = stim_info["PolarBeginDegree1"].astype(int)
+        stim_info["PolarEndDegree1"] = stim_info["PolarEndDegree1"].astype(int)
+        stim_info["Phase1"] = stim_info["Phase1"].astype(int)
+        stim_info["PolarEndDegree1"] = stim_info["PolarEndDegree1"].astype(int)
         duration_sorted=sorted(stim_info["Duration"].unique())
+        begin_degree_sorted=sorted(stim_info["PolarBeginDegree1"].unique())
         if visual_paradigm_name.lower() == "conflict":
             stim_type = [
                 "cc_back_slow",
@@ -405,8 +415,10 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             & (stim_info["Phase1"] == 0)
             & (stim_info["PolarEndDegree1"] > stim_info["PolarBeginDegree1"]),
         ]
+            stim_info["stim_type"] = np.select(filters, stim_type)
+        elif visual_paradigm_name.lower() == "gratings":
+            stim_info["stim_type"] = stim_info["PolarBeginDegree1"].astype(int)
         else:
-            degree_sorted=sorted(stim_info["PolarEndDegree1"].unique())
             stim_type = [
                 "receding_left_slow",
                 "receding_center_slow",
@@ -431,60 +443,60 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             filters = [
             (stim_info["Duration"] == duration_sorted[2])
             & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[2]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[2]),
             (stim_info["Duration"] == duration_sorted[2])
             & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[1]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[1]),
             (stim_info["Duration"] == duration_sorted[2])
             & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[0]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[0]),
             (stim_info["Duration"] == duration_sorted[1])
             & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[2]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[2]),
             (stim_info["Duration"] == duration_sorted[1])
             & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[1]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[1]),
             (stim_info["Duration"] == duration_sorted[1])
             & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[0]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[0]),
             (stim_info["Duration"] == duration_sorted[0])
             & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[2]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[2]),
             (stim_info["Duration"] == duration_sorted[0])
             & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[1]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[1]),
             (stim_info["Duration"] == duration_sorted[0])
             & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[0]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[0]),
             (stim_info["Duration"] == duration_sorted[2])
             & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[2]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[2]),
             (stim_info["Duration"] == duration_sorted[2])
             & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[1]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[1]),
             (stim_info["Duration"] == duration_sorted[2])
             & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[0]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[0]),
             (stim_info["Duration"] == duration_sorted[1])
             & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[2]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[2]),
             (stim_info["Duration"] == duration_sorted[1])
             & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[1]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[1]),
             (stim_info["Duration"] == duration_sorted[1])
             & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[0]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[0]),
             (stim_info["Duration"] == duration_sorted[0])
             & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[2]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[2]),
             (stim_info["Duration"] == duration_sorted[0])
             & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[1]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[1]),
             (stim_info["Duration"] == duration_sorted[0])
             & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == degree_sorted[0]),
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[0]),
         ]
-        stim_info["stim_type"] = np.select(filters, stim_type)
+            stim_info["stim_type"] = np.select(filters, stim_type)
     else:
         col_index = [2, 3, 4, 5, 7, 11, 13, 15, 17]
         col_name = [
@@ -755,8 +767,10 @@ if __name__ == "__main__":
         with open(json_file, "r") as f:
             print(f"load analysis methods from file {json_file}")
             analysis_methods = json.loads(f.read())
-    analysis_methods.update({"experiment_name":"looming"})
-    stim_directory=r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25018\250519\looming\session1"
+    #analysis_methods.update({"experiment_name":"looming"})
+    analysis_methods.update({"experiment_name":"gratings"})
+    #stim_directory=r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25018\250519\looming\session1"
+    stim_directory=r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25018\250519\gratings\session1"
     trial_ext = "trial*.csv"
     this_csv = find_file(stim_directory, trial_ext)
     stim_pd = pd.read_csv(this_csv)
