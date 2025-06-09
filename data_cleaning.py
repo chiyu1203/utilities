@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os, math, re, csv, json, sys
 import time
-
+from math import atan2
 # import chardet
 from pathlib import Path
 from useful_tools import find_file
@@ -120,34 +120,71 @@ def bfill(arr):
         return ffill(arr[:, ::-1])[:, ::-1]
 
 
-def removeFictracNoise(X, Y, analysis_methods):
+def remove_unreliable_tracking(X, Y, analysis_methods,ts=None):
     time_series_analysis = analysis_methods.get("time_series_analysis")
+    exp_name=analysis_methods.get("experiment_name")
     travel_distance_fbf = euclidean_distance(X,Y)
+    if exp_name.lower() == "locustvr":
+        if time_series_analysis:
+            noise_index = np.argwhere(travel_distance_fbf > 1.0)
+            X[noise_index.T] = np.nan
+            Y[noise_index.T] = np.nan
+            good_track_ratio = (len(X) - noise_index.shape[0]) / len(X)
+            if good_track_ratio<1:
+                print("let's check")
+            ts = ts - ts.min()
+        else:
+            noise_index = np.argwhere(travel_distance_fbf > 1.0)
+            Xraw = X
+            NewX = np.delete(np.diff(X), noise_index.T)
+            NewY = np.delete(np.diff(Y), noise_index.T)
+            X = np.nancumsum(NewX)
+            Y = np.nancumsum(NewY)
+            if ts is not None:
+                NewTs= np.delete(np.diff(ts), noise_index.T)
+                ts= np.nancumsum(NewTs)
 
-    if time_series_analysis:
-        noise_index = np.argwhere(travel_distance_fbf > 1.0)
-        """
-        arbitary threshold based on VR4_2024-11-16_155210: 0.3 can remove fictrac bad tracking, 
-        but at the risk of removing running data. 1.0 is safer or 
-        follow what I did with bonfic data, extract potential epochs with 0.5 for 20 frames and 
-        then apply fft to get auc value during <1 Hz"""
-        X[noise_index.T] = np.nan
-        Y[noise_index.T] = np.nan
-        # xy = ffill(np.vstack((X, Y)))
-        # X = xy[0]
-        # Y = xy[1]
-        good_track_ratio = (len(X) - noise_index.shape[0]) / len(X)
+            angles = np.arctan2(np.diff(Y), np.diff(X))
+            a = np.abs(np.gradient(angles))
+            # angles = np.insert(
+            #     angles, 0, np.nan
+            # )  # add the initial heading direction, which is an nan to avoid bias toward certain degree.
+            
+            indikes = np.argwhere(a< 0.01) 
+        
+            NewX = np.delete(np.diff(X), indikes.T)       
+            NewY = np.delete(np.diff(Y), indikes.T) 
+            X = np.nancumsum(NewX)
+            Y = np.nancumsum(NewY)
+            if ts is not None:
+                NewTs= np.delete(np.diff(ts), indikes.T)
+                ts= np.nancumsum(NewTs)
+            good_track_ratio = len(X)/len(Xraw)
     else:
-        noise_index = np.argwhere(
-            travel_distance_fbf > 0.4
-        )  # arbitary threshold based on several videos in Swarm scene
-        Xraw = X
-        NewX = np.delete(np.diff(X), noise_index.T)
-        NewY = np.delete(np.diff(Y), noise_index.T)
-        X = np.nancumsum(NewX)
-        Y = np.nancumsum(NewY)
-        good_track_ratio = len(X) / len(Xraw)
-    return good_track_ratio, X, Y
+        if time_series_analysis:
+            noise_index = np.argwhere(travel_distance_fbf > 1.0)
+            """
+            arbitary threshold based on VR4_2024-11-16_155210: 0.3 can remove fictrac bad tracking, 
+            but at the risk of removing running data. 1.0 is safer or 
+            follow what I did with bonfic data, extract potential epochs with 0.5 for 20 frames and 
+            then apply fft to get auc value during <1 Hz"""
+            X[noise_index.T] = np.nan
+            Y[noise_index.T] = np.nan
+            # xy = ffill(np.vstack((X, Y)))
+            # X = xy[0]
+            # Y = xy[1]
+            good_track_ratio = (len(X) - noise_index.shape[0]) / len(X)
+        else:
+            noise_index = np.argwhere(
+                travel_distance_fbf > 0.4
+            )  # arbitary threshold based on several videos in Swarm scene
+            Xraw = X
+            NewX = np.delete(np.diff(X), noise_index.T)
+            NewY = np.delete(np.diff(Y), noise_index.T)
+            X = np.nancumsum(NewX)
+            Y = np.nancumsum(NewY)
+            good_track_ratio = len(X) / len(Xraw)
+    return good_track_ratio, X, Y,ts
 
 def euclidean_distance(X,Y):
     return np.sqrt(np.add(np.square(np.diff(X)), np.square(np.diff(Y))))
