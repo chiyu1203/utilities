@@ -7,6 +7,34 @@ from math import atan2
 from pathlib import Path
 from useful_tools import find_file
 from scipy.interpolate import interp1d
+# def ListAngles(X,Y):
+#     ang = [] 
+#     for i in range(len(X)-1):
+#         changeInX = X[i+1] - X[i]
+#         changeInY = Y[i+1] - Y[i]
+        
+#         a = atan2(changeInY,changeInX)
+#         if a < 0:
+#             a = a + 2*np.pi
+#         ang.append(a)
+        
+#     return ang
+
+# def calc_eucledian(xx1,yy1):
+#     w=0
+#     dist = []
+#     while w < len(xx1)-1:
+        
+
+#         a = np.array((xx1[w+1],yy1[w+1]))
+#         b = np.array((xx1[w],yy1[w]))        
+
+#         euc = np.linalg.norm(a - b)
+#         #euc = distance.euclidean(b,a)
+#         dist.append(euc)
+#         w = w + 1
+
+#     return dist
 
 def interp_fill(arr):
     arr = arr.copy()
@@ -120,71 +148,81 @@ def bfill(arr):
         return ffill(arr[:, ::-1])[:, ::-1]
 
 
-def remove_unreliable_tracking(X, Y, analysis_methods,ts=None):
+def remove_unreliable_tracking(X, Y, analysis_methods):
+    using_heading_mask=True
     time_series_analysis = analysis_methods.get("time_series_analysis")
     exp_name=analysis_methods.get("experiment_name")
     travel_distance_fbf = euclidean_distance(X,Y)
     if exp_name.lower() == "locustvr":
         if time_series_analysis:
             noise_index = np.argwhere(travel_distance_fbf > 1.0)
-            X[noise_index.T] = np.nan
-            Y[noise_index.T] = np.nan
-            good_track_ratio = (len(X) - noise_index.shape[0]) / len(X)
+            mask=noise_index.T
+            X[mask] = np.nan
+            Y[mask] = np.nan
+            good_track_ratio = (len(X) - mask.shape[1]) / len(X)
             if good_track_ratio<1:
                 print("let's check")
-            ts = ts - ts.min()
         else:
             noise_index = np.argwhere(travel_distance_fbf > 1.0)
-            Xraw = X
-            NewX = np.delete(np.diff(X), noise_index.T)
-            NewY = np.delete(np.diff(Y), noise_index.T)
-            X = np.nancumsum(NewX)
-            Y = np.nancumsum(NewY)
-            if ts is not None:
-                NewTs= np.delete(np.diff(ts), noise_index.T)
-                ts= np.nancumsum(NewTs)
-
-            angles = np.arctan2(np.diff(Y), np.diff(X))
-            a = np.abs(np.gradient(angles))
-            # angles = np.insert(
-            #     angles, 0, np.nan
-            # )  # add the initial heading direction, which is an nan to avoid bias toward certain degree.
+            Xraw = X        
+            dX = np.diff(X)
+            dY = np.diff(Y)
+            if using_heading_mask:
+                angles = np.arctan2(dY, dX)
+                a = np.abs(np.gradient(angles)) 
+                indikes = np.argwhere(a< 0.0001) 
+                mask1 = np.ones_like(dX, dtype=bool)
+                mask1[noise_index] = False
+                mask2 = np.ones_like(dX, dtype=bool)
+                mask2[indikes]=False
+                mask=mask1 & mask2
+            else:
+                mask = np.ones_like(dX, dtype=bool)
+                mask[noise_index] = False
+            X = np.nancumsum(dX[mask])
+            Y = np.nancumsum(dY[mask])
+            #### there seems to be a bug from the funcs.py removeNoiseVR(X,Y,ts=None)
+            # a = np.array(calc_eucledian(X,Y))
+            # indikes = np.argwhere( a > 0.01)
             
-            indikes = np.argwhere(a< 0.01) 
+            # NewX = np.delete(np.diff(X), indikes.T)       
+            # NewY = np.delete(np.diff(Y), indikes.T) 
+            # X = np.cumsum(NewX)
+            # Y = np.cumsum(NewY)
+            # a = ListAngles(X,Y)
+            # a = np.abs(np.gradient(a))
+            # indikes = np.argwhere( a < 0.0001) 
         
-            NewX = np.delete(np.diff(X), indikes.T)       
-            NewY = np.delete(np.diff(Y), indikes.T) 
-            X = np.nancumsum(NewX)
-            Y = np.nancumsum(NewY)
-            if ts is not None:
-                NewTs= np.delete(np.diff(ts), indikes.T)
-                ts= np.nancumsum(NewTs)
+            # NewX = np.delete(np.diff(X), indikes.T)       
+            # NewY = np.delete(np.diff(Y), indikes.T) 
+            # X = np.cumsum(NewX)
+            # Y = np.cumsum(NewY)
             good_track_ratio = len(X)/len(Xraw)
     else:
         if time_series_analysis:
             noise_index = np.argwhere(travel_distance_fbf > 1.0)
+            mask=noise_index.T
             """
             arbitary threshold based on VR4_2024-11-16_155210: 0.3 can remove fictrac bad tracking, 
             but at the risk of removing running data. 1.0 is safer or 
             follow what I did with bonfic data, extract potential epochs with 0.5 for 20 frames and 
             then apply fft to get auc value during <1 Hz"""
-            X[noise_index.T] = np.nan
-            Y[noise_index.T] = np.nan
-            # xy = ffill(np.vstack((X, Y)))
-            # X = xy[0]
-            # Y = xy[1]
-            good_track_ratio = (len(X) - noise_index.shape[0]) / len(X)
+            X[mask] = np.nan
+            Y[mask] = np.nan
+            good_track_ratio = (len(X) - mask.shape[1]) / len(X)
         else:
             noise_index = np.argwhere(
                 travel_distance_fbf > 0.4
-            )  # arbitary threshold based on several videos in Swarm scene
+            )#arbitary threshold based on several videos in Swarm scene
             Xraw = X
-            NewX = np.delete(np.diff(X), noise_index.T)
-            NewY = np.delete(np.diff(Y), noise_index.T)
-            X = np.nancumsum(NewX)
-            Y = np.nancumsum(NewY)
+            dX = np.diff(X)
+            dY = np.diff(Y)
+            mask = np.ones_like(dX, dtype=bool)
+            mask[noise_index] = False
+            X = np.nancumsum(dX[mask])
+            Y = np.nancumsum(dY[mask])
             good_track_ratio = len(X) / len(Xraw)
-    return good_track_ratio, X, Y,ts
+    return good_track_ratio, X, Y,mask
 
 def euclidean_distance(X,Y):
     return np.sqrt(np.add(np.square(np.diff(X)), np.square(np.diff(Y))))
