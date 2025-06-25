@@ -3,6 +3,7 @@ import numpy as np
 import os, math, re, csv, json, sys
 import time
 from math import atan2
+import matplotlib.pyplot as plt
 # import chardet
 from pathlib import Path
 from useful_tools import find_file
@@ -199,8 +200,14 @@ def remove_unreliable_tracking(X, Y, analysis_methods):
             # Y = np.cumsum(NewY)
             good_track_ratio = len(X)/len(Xraw)
     else:
+        noise_index = np.argwhere(
+                travel_distance_fbf > 0.4
+            )#arbitary threshold based on several videos in Swarm scene
+        # fig, ax1 = plt.subplots(1, 1, figsize=(18, 7), tight_layout=True)
+        # ax1.hist(travel_distance_fbf)
+        # fig.savefig('sanity_check.png')
         if time_series_analysis:
-            noise_index = np.argwhere(travel_distance_fbf > 1.0)
+            # noise_index = np.argwhere(travel_distance_fbf > 1.0)
             mask=noise_index.T
             """
             arbitary threshold based on VR4_2024-11-16_155210: 0.3 can remove fictrac bad tracking, 
@@ -211,13 +218,10 @@ def remove_unreliable_tracking(X, Y, analysis_methods):
             Y[mask] = np.nan
             good_track_ratio = (len(X) - mask.shape[1]) / len(X)
         else:
-            noise_index = np.argwhere(
-                travel_distance_fbf > 0.4
-            )#arbitary threshold based on several videos in Swarm scene
             Xraw = X
             dX = np.diff(X)
             dY = np.diff(Y)
-            mask = np.ones_like(dX, dtype=bool)
+            mask = np.ones_like(travel_distance_fbf, dtype=bool)
             mask[noise_index] = False
             X = np.nancumsum(dX[mask])
             Y = np.nancumsum(dY[mask])
