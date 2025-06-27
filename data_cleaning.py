@@ -36,6 +36,34 @@ from scipy.interpolate import interp1d
 #         w = w + 1
 
 #     return dist
+def detect_flaws(df, angle_col='heading_direction', threshold_upper=None, threshold_lower=None, threshold_range=None):
+### written by Aljoscha Markus 27/06/2025
+    df = df.copy()
+    y = df[angle_col].values
+    dy = np.diff(y)
+
+    # Identify initial flaw indices
+    flaw = np.where((np.abs(dy) > threshold_lower) & (np.abs(dy) < threshold_upper))[0]
+
+    if flaw.size == 0:
+        pass
+    else:
+        # Initialize a mask for flawed values
+        mask = np.zeros_like(y, dtype=bool)
+        mask[flaw] = True  # mark the initial flaws
+
+        # Expand the mask where flaws are close together
+        d_flaw = np.diff(flaw)
+        close_pairs = np.where(d_flaw < threshold_range)[0]
+
+        for i in close_pairs:
+            mask[flaw[i]:flaw[i + 1] + 1] = True
+
+        # Apply mask and interpolate
+        y[mask] = np.nan
+        df[angle_col] = pd.Series(y).interpolate(method='linear')
+    return df
+
 
 def interp_fill(arr):
     arr = arr.copy()
