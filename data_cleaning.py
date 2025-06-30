@@ -36,7 +36,7 @@ from scipy.interpolate import interp1d
 #         w = w + 1
 
 #     return dist
-def detect_flaws(df, angle_col='heading_direction', threshold_upper=None, threshold_lower=None, threshold_range=None):
+def remove_false_detection_heading(df, angle_col='heading_direction', threshold_upper=None, threshold_lower=None, threshold_range=None):
 ### written by Aljoscha Markus 27/06/2025
     df = df.copy()
     y = df[angle_col].values
