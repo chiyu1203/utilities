@@ -450,12 +450,19 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                     stim_variable.append(
                         int(float(stim_info.iloc[row, col].split("=", 1)[1]))
                     )
-            timestamp = stim_info.loc[row, "Value"]
-            stim_variable.append(float(timestamp.replace(")", "")))
+            if stim_info['Timestamp'].dtypes=='float64':
+                stim_info["ts"]=stim_info['Timestamp']
+                stim_info['temperature']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[0])
+                stim_info['humidity']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[1])
+                stim_info["temperature"] = stim_info["temperature"].astype("float32")
+                stim_info["humidity"] = stim_info["humidity"].astype("float32")
+            else:
+                timestamp = stim_info.loc[row, "Value"]
+                stim_variable.append(float(timestamp.replace(")", "")))
         stim_variable = np.array(stim_variable).reshape((len(stim_info), -1))
         default_column_names = [
             "LocationBeginX1","LocationEndX1","LocationBeginZ1","LocationEndZ1","PolarBeginR1","PolarEndR1","PolarBeginDegree1",
-            "PolarEndDegree1","Phase1","PreMovDuration","Duration","PostMovDuration","ISI","LocustObj1","ReverseZ1","LocustTexture1","TranslationalGain1","RotationalGain1"]
+            "PolarEndDegree1","Phase1","PreMovDuration","Duration","PostMovDuration","ISI","LocustObj1","ReverseZ1","LocustTexture1","TranslationalGain","RotationalGain","R","G","B","A"]
         this_column_names=default_column_names[:stim_variable.shape[1]-1]
         this_column_names.append("ts")
         stim_info = pd.DataFrame(stim_variable, columns=this_column_names)
@@ -615,7 +622,14 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             stim_info[["tmp", j]] = stim_info.iloc[:, i].str.split("=", expand=True)
             stim_info[j] = pd.to_numeric(stim_info[j])
         if exp_place.lower() == "zball" or exp_place.lower() == "matrexvr":
-            stim_info["ts"] = stim_info["Value"].str.replace(r"[()]", "", regex=True)
+            if stim_info['Timestamp'].dtypes=='float64':
+                stim_info["ts"]=stim_info['Timestamp']
+                stim_info['temperature']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[0])
+                stim_info['humidity']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[1])
+                stim_info["temperature"] = stim_info["temperature"].astype("float32")
+                stim_info["humidity"] = stim_info["humidity"].astype("float32")
+            else:
+                stim_info["ts"] = stim_info["Value"].str.replace(r"[()]", "", regex=True)
         elif exp_place.lower() == "vccball":
             stim_info["Value"] = stim_info["Value"].str.replace(r"[()]", "", regex=True)
             if stim_info["Timestamp"].dtypes == "object":
