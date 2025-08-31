@@ -441,31 +441,46 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
         stim_variable = []
         stimulus_timestamp = []
         for row in range(0, np.shape(stim_info)[0]):
-            for col in range(2, np.shape(stim_info)[1] - 1):
-                if col == np.shape(stim_info)[1] - 2:
-                    stim_variable.append(
-                        int(stim_info.iloc[row, col].split("=", 1)[1].split("}", 1)[0])
-                    )
+            for col in range(2, np.shape(stim_info)[1]-1):
+                if type(stim_info.iloc[row, col])==str:
+                    if ')' in stim_info.iloc[row, col] and '}' in stim_info.iloc[row, col]:
+                        continue
+                    elif ')' in stim_info.iloc[row, col] and ';' in stim_info.iloc[row, col]:
+                        continue##temperature and humidity can be processed with the following code
+                    elif '}' in stim_info.iloc[row, col]:
+                        stim_variable.append(
+                            float(stim_info.iloc[row, col].split("=", 1)[1].split("}", 1)[0])
+                        )
+                    elif ')' in stim_info.iloc[row, col]:
+                        stim_variable.append(
+                            float(stim_info.iloc[row, col].split("=", 1)[1].split(")", 1)[0])
+                        )
+                    else:
+                        stim_variable.append(
+                            float(stim_info.iloc[row, col].split("=", 1)[1]))
                 else:
-                    stim_variable.append(
-                        int(float(stim_info.iloc[row, col].split("=", 1)[1]))
-                    )
-            if stim_info['Timestamp'].dtypes=='float64':
-                stim_info["ts"]=stim_info['Timestamp']
-                stim_info['temperature']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[0])
-                stim_info['humidity']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[1])
-                stim_info["temperature"] = stim_info["temperature"].astype("float32")
-                stim_info["humidity"] = stim_info["humidity"].astype("float32")
-            else:
+                    continue ##time stamp can be processed with the following code
+            if stim_info['Timestamp'].dtypes==object:
                 timestamp = stim_info.loc[row, "Value"]
                 stim_variable.append(float(timestamp.replace(")", "")))
+
         stim_variable = np.array(stim_variable).reshape((len(stim_info), -1))
         default_column_names = [
             "LocationBeginX1","LocationEndX1","LocationBeginZ1","LocationEndZ1","PolarBeginR1","PolarEndR1","PolarBeginDegree1",
-            "PolarEndDegree1","Phase1","PreMovDuration","Duration","PostMovDuration","ISI","LocustObj1","ReverseZ1","LocustTexture1","TranslationalGain","RotationalGain","R","G","B","A"]
-        this_column_names=default_column_names[:stim_variable.shape[1]-1]
-        this_column_names.append("ts")
-        stim_info = pd.DataFrame(stim_variable, columns=this_column_names)
+            "PolarEndDegree1","Phase1","PreMovDuration","Duration","PostMovDuration","ISI","LocustObj1","ReverseZ1","LocustTexture1","TranslationalGain","RotationalGain","R1","G1","B1","A1",,"R2","G2","B2","A2"]
+        this_column_names=default_column_names[:stim_variable.shape[1]]
+        if stim_info['Timestamp'].dtypes=='float64':
+            stim_info_curated = pd.DataFrame(stim_variable, columns=this_column_names)
+            stim_info["ts"]=stim_info['Timestamp']
+            stim_info['temperature']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[0])
+            stim_info['humidity']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[1])
+            stim_info["temperature"] = stim_info["temperature"].astype("float32")
+            stim_info["humidity"] = stim_info["humidity"].astype("float32")
+            stim_info=pd.concat((stim_info_curated,stim_info.iloc[:,-3:]),axis=1)
+        else:
+            this_column_names.append("ts")
+            stim_info_curated = pd.DataFrame(stim_variable, columns=this_column_names)
+            stim_info=stim_info_curated    
         cols_to_convert = ["LocustTexture1","ReverseZ1","LocustObj1","PolarBeginDegree1","PolarEndDegree1","Phase1","Duration"]           
         stim_info[cols_to_convert] = stim_info[cols_to_convert].astype(int)
         duration_sorted=sorted(stim_info["Duration"].unique())
