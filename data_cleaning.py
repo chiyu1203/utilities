@@ -437,36 +437,49 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 & (stim_info.iloc[:, 2] == stim_info.iloc[:, 3]),
             ]
         stim_info["stim_type"] = np.select(filters, stim_type)
-    elif visual_paradigm_name.lower() == "conflict" or visual_paradigm_name.lower() == "looming" or visual_paradigm_name.lower() == "receding" or visual_paradigm_name.lower() == "gratings":
+    elif visual_paradigm_name.lower() in ["conflict","looming","receding","gratings","sweeping"]:
         stim_variable = []
         stimulus_timestamp = []
+        num_trial_col=np.shape(stim_info)[1] - 2
         for row in range(0, np.shape(stim_info)[0]):
-            for col in range(2, np.shape(stim_info)[1] - 1):
-                if col == np.shape(stim_info)[1] - 2:
+            for col in range(2,num_trial_col):
+                if '}' in stim_info.iloc[row, col]:
                     stim_variable.append(
-                        int(stim_info.iloc[row, col].split("=", 1)[1].split("}", 1)[0])
+                        float(stim_info.iloc[row, col].split("=", 1)[1].split("}", 1)[0])
                     )
                 else:
                     stim_variable.append(
-                        int(float(stim_info.iloc[row, col].split("=", 1)[1]))
+                        float(stim_info.iloc[row, col].split("=", 1)[1])
                     )
-            if stim_info['Timestamp'].dtypes=='float64':
-                stim_info["ts"]=stim_info['Timestamp']
-                stim_info['temperature']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[0])
-                stim_info['humidity']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[1])
-                stim_info["temperature"] = stim_info["temperature"].astype("float32")
-                stim_info["humidity"] = stim_info["humidity"].astype("float32")
-            else:
-                timestamp = stim_info.loc[row, "Value"]
-                stim_variable.append(float(timestamp.replace(")", "")))
         stim_variable = np.array(stim_variable).reshape((len(stim_info), -1))
+        temporary_stim_info = pd.DataFrame(stim_variable)
+        if stim_info['Timestamp'].dtypes=='float64':
+            # temperature=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[0])
+            # humitidy=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[1])
+            #temperature_and_ = pd.DataFrame({'Column1': series1, 'Column2': series2})
+            stim_info['temperature']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[0])
+            stim_info['humidity']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[1])
+            stim_info["temperature"] = stim_info["temperature"].astype("float32")
+            stim_info["humidity"] = stim_info["humidity"].astype("float32")
+            stim_info = pd.concat([temporary_stim_info,stim_info['Timestamp'],stim_info['temperature'],stim_info["humidity"]], axis=1)
+            stim_info.rename(columns={"Timestamp": "ts"},inplace=True)
+
+            # temporary_stim_info.insert(-1, 'ts', stim_info['Timestamp'], allow_duplicates=True)
+            # temporary_stim_info.insert(-1, 'temperature', pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[0]), allow_duplicates=True)
+            # temporary_stim_info.insert(-1, 'humidity', pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[1]), allow_duplicates=True)
+            # stim_variable.append(stim_info['Timestamp'])
+            # stim_variable.append(pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[0]))
+            # stim_variable.append(pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[1]))
+        else:
+            timestamp = stim_info.loc[row, "Value"]
+            stim_variable.append(float(timestamp.replace(")", "")))
         default_column_names = [
             "LocationBeginX1","LocationEndX1","LocationBeginZ1","LocationEndZ1","PolarBeginR1","PolarEndR1","PolarBeginDegree1",
             "PolarEndDegree1","Phase1","PreMovDuration","Duration","PostMovDuration","ISI","LocustObj1","ReverseZ1","LocustTexture1","TranslationalGain","RotationalGain","R","G","B","A"]
-        this_column_names=default_column_names[:stim_variable.shape[1]-1]
-        this_column_names.append("ts")
-        stim_info = pd.DataFrame(stim_variable, columns=this_column_names)
-        cols_to_convert = ["LocustTexture1","ReverseZ1","LocustObj1","PolarBeginDegree1","PolarEndDegree1","Phase1","Duration"]           
+        these_names=default_column_names[:stim_variable.shape[1]]
+        these_names.extend(["ts","temperature","humidity"])
+        stim_info.columns=these_names
+        cols_to_convert = ["LocustTexture1","ReverseZ1","LocustObj1","PolarBeginDegree1","PolarEndDegree1","Phase1"]
         stim_info[cols_to_convert] = stim_info[cols_to_convert].astype(int)
         duration_sorted=sorted(stim_info["Duration"].unique())
         begin_degree_sorted=sorted(stim_info["PolarBeginDegree1"].unique())
@@ -526,6 +539,83 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif visual_paradigm_name.lower() == "gratings":
             stim_info["stim_type"] = stim_info["PolarBeginDegree1"].astype(int)
+        elif 'R' in default_column_names and visual_paradigm_name.lower()=="looming":
+            stim_type = ['black','green','yellow','white','luminance_control','black_receding']
+            filters = [
+            (stim_info["R"] == 0)
+            &(stim_info["G"] == 0)
+            &(stim_info["B"] == 0)
+            &(stim_info["A"] == 1)
+            &(stim_info["PolarBeginR1"] > stim_info["PolarEndR1"]),
+            (stim_info["R"] == 0.5882)
+            &(stim_info["G"] == 0.6705)
+            &(stim_info["B"] == 0.3176)
+            &(stim_info["A"] == 1),
+            (stim_info["R"] == 0.8117)
+            &(stim_info["G"] == 0.7411)
+            &(stim_info["B"] == 0.1882)
+            &(stim_info["A"] == 1),
+            (stim_info["R"] == 1)
+            &(stim_info["G"] == 1)
+            &(stim_info["B"] == 1)
+            &(stim_info["A"] == 1),
+            (stim_info["R"] == 0)
+            &(stim_info["G"] == 0)
+            &(stim_info["B"] == 0)
+            &(stim_info["A"] == 0),
+            (stim_info["R"] == 0)
+            &(stim_info["G"] == 0)
+            &(stim_info["B"] == 0)
+            &(stim_info["A"] == 1)
+            &(stim_info["PolarBeginR1"] < stim_info["PolarEndR1"]),
+        ]
+            stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
+        elif 'R' in default_column_names and visual_paradigm_name.lower()== "sweeping":
+            stim_type = ['black_dir1','green_dir1','yellow_dir1','white_dir1','black_di2','green_dir2','yellow_dir2','white_dir2']#dir2 means downward; dir1 means upward
+            filters = [
+            (stim_info["R"] == 0)
+            &(stim_info["G"] == 0)
+            &(stim_info["B"] == 0)
+            &(stim_info["A"] == 1)
+            &(stim_info["PolarBeginDegree1"] > stim_info["PolarEndDegree1"]),
+            (stim_info["R"] == 0.5882)
+            &(stim_info["G"] == 0.6705)
+            &(stim_info["B"] == 0.3176)
+            &(stim_info["A"] == 1)
+            &(stim_info["PolarBeginDegree1"] > stim_info["PolarEndDegree1"]),
+            (stim_info["R"] == 0.8117)
+            &(stim_info["G"] == 0.7411)
+            &(stim_info["B"] == 0.1882)
+            &(stim_info["A"] == 1)
+            &(stim_info["PolarBeginDegree1"] > stim_info["PolarEndDegree1"]),
+            (stim_info["R"] == 1)
+            &(stim_info["G"] == 1)
+            &(stim_info["B"] == 1)
+            &(stim_info["A"] == 1)
+            &(stim_info["PolarBeginDegree1"] > stim_info["PolarEndDegree1"]),
+            (stim_info["R"] == 0)
+            &(stim_info["G"] == 0)
+            &(stim_info["B"] == 0)
+            &(stim_info["A"] == 1)
+            &(stim_info["PolarBeginDegree1"] < stim_info["PolarEndDegree1"]),
+            (stim_info["R"] == 0.5882)
+            &(stim_info["G"] == 0.6705)
+            &(stim_info["B"] == 0.3176)
+            &(stim_info["A"] == 1)
+            &(stim_info["PolarBeginDegree1"] < stim_info["PolarEndDegree1"]),
+            (stim_info["R"] == 0.8117)
+            &(stim_info["G"] == 0.7411)
+            &(stim_info["B"] == 0.1882)
+            &(stim_info["A"] == 1)
+            &(stim_info["PolarBeginDegree1"] < stim_info["PolarEndDegree1"]),
+            (stim_info["R"] == 1)
+            &(stim_info["G"] == 1)
+            &(stim_info["B"] == 1)
+            &(stim_info["A"] == 1)
+            &(stim_info["PolarBeginDegree1"] < stim_info["PolarEndDegree1"])
+        ]
+            stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
+
         else:
             stim_type = [
                 "receding_left_slow",
