@@ -540,38 +540,38 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif visual_paradigm_name.lower() == "gratings":
             stim_info["stim_type"] = stim_info["PolarBeginDegree1"].astype(int)
-        elif 'R' in default_column_names and visual_paradigm_name.lower()=="looming":
+        elif 'R1' in default_column_names and visual_paradigm_name.lower()=="looming":
             stim_type = ['black','green','yellow','white','luminance_control','black_receding']
             filters = [
-            (stim_info["R"] == 0)
-            &(stim_info["G"] == 0)
-            &(stim_info["B"] == 0)
-            &(stim_info["A"] == 1)
+            (stim_info["R1"] == 0)
+            &(stim_info["G1"] == 0)
+            &(stim_info["B1"] == 0)
+            &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginR1"] > stim_info["PolarEndR1"]),
-            (stim_info["R"] == 0.5882)
-            &(stim_info["G"] == 0.6705)
-            &(stim_info["B"] == 0.3176)
-            &(stim_info["A"] == 1),
-            (stim_info["R"] == 0.8117)
-            &(stim_info["G"] == 0.7411)
-            &(stim_info["B"] == 0.1882)
-            &(stim_info["A"] == 1),
-            (stim_info["R"] == 1)
-            &(stim_info["G"] == 1)
-            &(stim_info["B"] == 1)
-            &(stim_info["A"] == 1),
-            (stim_info["R"] == 0)
-            &(stim_info["G"] == 0)
-            &(stim_info["B"] == 0)
-            &(stim_info["A"] == 0),
-            (stim_info["R"] == 0)
-            &(stim_info["G"] == 0)
-            &(stim_info["B"] == 0)
-            &(stim_info["A"] == 1)
+            (stim_info["R1"] == 0.5882)
+            &(stim_info["G1"] == 0.6705)
+            &(stim_info["B1"] == 0.3176)
+            &(stim_info["A1"] == 1),
+            (stim_info["R1"] == 0.8117)
+            &(stim_info["G1"] == 0.7411)
+            &(stim_info["B1"] == 0.1882)
+            &(stim_info["A1"] == 1),
+            (stim_info["R1"] == 1)
+            &(stim_info["G1"] == 1)
+            &(stim_info["B1"] == 1)
+            &(stim_info["A1"] == 1),
+            (stim_info["R1"] == 0)
+            &(stim_info["G1"] == 0)
+            &(stim_info["B1"] == 0)
+            &(stim_info["A1"] == 0),
+            (stim_info["R1"] == 0)
+            &(stim_info["G1"] == 0)
+            &(stim_info["B1"] == 0)
+            &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginR1"] < stim_info["PolarEndR1"]),
         ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
-        elif 'R' in default_column_names and visual_paradigm_name.lower()== "sweeping":
+        elif 'R1' in default_column_names and visual_paradigm_name.lower()== "sweeping":
             stim_type = ['black_dir1','green_dir1','yellow_dir1','white_dir1','black_di2','green_dir2','yellow_dir2','white_dir2']#dir2 means downward; dir1 means upward
             filters = [
             (stim_info["R"] == 0)
