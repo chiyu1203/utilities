@@ -542,7 +542,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
         elif visual_paradigm_name.lower() == "gratings":
             stim_info["stim_type"] = stim_info["PolarBeginDegree1"].astype(int)
         elif 'R1' in default_column_names and visual_paradigm_name.lower()=="looming":
-            stim_type = ['black','green','yellow','white','luminance_control','black_receding']
+            stim_type = ['black','green','yellow','white','luminance_control','black_receding','grey']
             filters = [
             (stim_info["R1"] == 0)
             &(stim_info["G1"] == 0)
@@ -570,6 +570,11 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["B1"] == 0)
             &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginR1"] < stim_info["PolarEndR1"]),
+            (stim_info["R1"] == 0.6)
+            &(stim_info["G1"] == 0.6)
+            &(stim_info["B1"] == 0.6)
+            &(stim_info["A1"] == 1)
+            &(stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
         ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif 'R1' in default_column_names and visual_paradigm_name.lower()== "sweeping":
