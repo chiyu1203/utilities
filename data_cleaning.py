@@ -821,8 +821,9 @@ def generate_timestamp_csv(file_path):
     return data
 
 
-def load_fictrac_data_file(this_file, analysis_methods):
+def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23]):
     # load analysis methods
+    
     track_ball_radius = analysis_methods.get("trackball_radius")
     monitor_fps = analysis_methods.get("monitor_fps")
     camera_fps = analysis_methods.get("camera_fps")
@@ -832,6 +833,19 @@ def load_fictrac_data_file(this_file, analysis_methods):
     file_name = Path(this_file).stem
     experiment_timestamp = file_name.split("-")
     raw_data = pd.read_table(this_file, sep="\s+")
+    # 
+    # column7=raw_data.iloc[:,7].astype(float)
+    # column6=raw_data.iloc[:,6].astype(float)
+    # column5=raw_data.iloc[:,5].astype(float)
+    # print(np.sum(abs(column5.values)),np.sum(abs(column6.values)),np.sum(abs(column7.values)))
+    # fig1, (ax, ax1,ax2) = plt.subplots(
+    #     nrows=3, ncols=1, figsize=(18, 7), tight_layout=True
+    # )
+    # ax.plot(column5.values)
+    # ax1.plot(column6.values)
+    # ax2.plot(column7.values)
+    # plt.show()
+    # fig1.savefig(f"{this_file}_raw_fictrac_check.png")
     """
     fictrac title is here 'frame counter', 'delta rotation vector cam x', 'delta rotation vector cam y', \
     'delta rotation vector cam z', 'delta rotation error score', 'delta rotation vector lab x', \
@@ -841,12 +855,13 @@ def load_fictrac_data_file(this_file, analysis_methods):
     'absolute rotation vector lab z', 'intergrated x position','intergrated y position', \
     'intergrated animal heading', 'animal movement direction', 'animal movement speed', \
     'intergrated forward motion','intergrated side motion', 'timestamp', 'sequence counter','delta timestamp', 'alt. timestamp']
+    In previous Z ball settings, until 20204-07-01, Z axis is the yaw axis, X is the roll axis, Y is the pitch axis. positive X is the anterior, ventral is the positive Z, lateral is the positive Y
+    In the latest Z ball settings, from 2025-09-01, Z axis is the roll axis, X is the yaw axis, Y is the pitch axis. positive X is the anterior, dorsal is the positive Z, lateral is the positive Y.
+    Also in the latest Z ball settings, from 2025-09-01, campera fps is 100Hz
     """
     ## drop some column
     raw_data.drop(
-        raw_data.columns[
-            [0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23]
-        ],
+        raw_data.columns[column_to_drop],
         axis=1,
         inplace=True,
     )
@@ -944,9 +959,10 @@ def load_fictrac_data_file(this_file, analysis_methods):
         #         Path.unlink(old_database_dir)
         #     except OSError as e:
         #         print("Error: %s - %s." % (e.filename, e.strerror))
+    return raw_data
 
 
-def preprocess_fictrac_data(thisDir, json_file):
+def preprocess_fictrac_data(thisDir, json_file,column_to_drop=[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23]):
     if isinstance(json_file, dict):
         analysis_methods = json_file
     else:
@@ -968,9 +984,9 @@ def preprocess_fictrac_data(thisDir, json_file):
                 print(
                     f"found multiple files with {dat_pattern}. Use a for-loop to go through them"
                 )
-                load_fictrac_data_file(this_file, analysis_methods)
+                _=load_fictrac_data_file(this_file, analysis_methods,column_to_drop)
         elif len(found_result.stem) > 0:
-            load_fictrac_data_file(found_result, analysis_methods)
+            _=load_fictrac_data_file(found_result, analysis_methods,column_to_drop)
 
 
 if __name__ == "__main__":
@@ -982,23 +998,26 @@ if __name__ == "__main__":
             print(f"load analysis methods from file {json_file}")
             analysis_methods = json.loads(f.read())
     #analysis_methods.update({"experiment_name":"looming"})
-    analysis_methods.update({"experiment_name":"gratings"})
+    #analysis_methods.update({"experiment_name":"gratings"})
+    analysis_methods.update({"experiment_name":"coherence"})
     #stim_directory=r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25018\250519\looming\session1"
-    stim_directory=r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25018\250519\gratings\session1"
-    trial_ext = "trial*.csv"
-    this_csv = find_file(stim_directory, trial_ext)
-    stim_pd = pd.read_csv(this_csv)
-    meta_info, _ = sorting_trial_info(stim_pd,analysis_methods)
+    # stim_directory=r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25018\250519\gratings\session1"
+    # trial_ext = "trial*.csv"
+    # this_csv = find_file(stim_directory, trial_ext)
+    # stim_pd = pd.read_csv(this_csv)
+    # meta_info, _ = sorting_trial_info(stim_pd,analysis_methods)
     #thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24036\240801\coherence\session1"
-    thisDir = r"C:\Users\neuroLaptop\Documents\GN25006\250312\receding\session1"
+    #thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25102\250929\coherence\session1"
+    thisDir = r"Y:\GN25051\251101\gratings\session1"
+    #thisDir = r"C:\Users\neuroLaptop\Documents\GN25006\250312\receding\session1"
     # thisDir = r"C:\Users\neuroLaptop\Documents\GN25040\250106\speed\session1"
     json_file = r".\analysis_methods_dictionary.json"
-    tic = time.perf_counter()
-    old_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\lux4_2024-12-09T12_02_03.csv"
-    new_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\camera4_2024-12-09T12_02_03.csv"
-    update_csv_value_pd(old_csv_path, new_csv_path, 0)
-    # preprocess_fictrac_data(thisDir, json_file)
-    toc = time.perf_counter()
-    print(f"it takes {toc-tic:0.4f} seconds to run the main function")
+    # tic = time.perf_counter()
+    # old_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\lux4_2024-12-09T12_02_03.csv"
+    # new_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\camera4_2024-12-09T12_02_03.csv"
+    # update_csv_value_pd(old_csv_path, new_csv_path, 0)
+    preprocess_fictrac_data(thisDir, json_file,[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23])
+    # toc = time.perf_counter()
+    # print(f"it takes {toc-tic:0.4f} seconds to run the main function")
     # this_file = r"Z:\Users\chiyu\DL220THP_Thermo1_240904_240908.csv"
     # load_temperature_data(this_file)
