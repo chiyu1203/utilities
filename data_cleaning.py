@@ -541,7 +541,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif visual_paradigm_name.lower() == "gratings":
             stim_info["stim_type"] = stim_info["PolarBeginDegree1"].astype(int)
-        elif 'R1' in default_column_names and visual_paradigm_name.lower()=="looming":
+        elif 'R1' in this_column_names and visual_paradigm_name.lower()=="looming":
             stim_type = ['black','green','yellow','white','luminance_control','black_receding','grey']
             filters = [
             (stim_info["R1"] == 0)
@@ -577,7 +577,114 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
         ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
-        elif 'R1' in default_column_names and visual_paradigm_name.lower()== "sweeping":
+        elif 'R2' in this_column_names and visual_paradigm_name.lower()== "sweeping":
+            stim_type = ['black_null','white_null','yellow_null','null_black','null_white','null_yellow','black_black','white_white','yellow_yellow','black_white','white_black','yellow_white','white_yellow','yellow_black','black_yellow']
+            filters = [
+            (stim_info["R1"] == 0)
+            &(stim_info["G1"] == 0)
+            &(stim_info["B1"] == 0)
+            &(stim_info["A1"] == 1)
+            &(stim_info["A2"] ==0),
+            (stim_info["R1"] == 1)
+            &(stim_info["G1"] == 1)
+            &(stim_info["B1"] == 1)
+            &(stim_info["A1"] == 1)
+            &(stim_info["A2"] ==0),
+            (stim_info["R1"] == 0.8117)
+            &(stim_info["G1"] == 0.7411)
+            &(stim_info["B1"] == 0.1882)
+            &(stim_info["A1"] == 1)
+            &(stim_info["A2"] ==0),
+            (stim_info["R2"] == 0)
+            &(stim_info["G2"] == 0)
+            &(stim_info["B2"] == 0)
+            &(stim_info["A2"] == 1)
+            &(stim_info["A1"] ==0),
+            (stim_info["R2"] == 1)
+            &(stim_info["G2"] == 1)
+            &(stim_info["B2"] == 1)
+            &(stim_info["A2"] == 1)
+            &(stim_info["A1"] ==0),
+            (stim_info["R2"] == 0.8117)
+            &(stim_info["G2"] == 0.7411)
+            &(stim_info["B2"] == 0.1882)
+            &(stim_info["A2"] == 1)
+            &(stim_info["A1"] ==0),
+            (stim_info["R1"] == 0)
+            &(stim_info["G1"] == 0)
+            &(stim_info["B1"] == 0)
+            &(stim_info["A1"] == 1)
+            &(stim_info["R2"] == 0)
+            &(stim_info["G2"] == 0)
+            &(stim_info["B2"] == 0)
+            &(stim_info["A2"] == 1),
+            (stim_info["R1"] == 1)
+            &(stim_info["G1"] == 1)
+            &(stim_info["B1"] == 1)
+            &(stim_info["A1"] == 1)
+            &(stim_info["R2"] == 1)
+            &(stim_info["G2"] == 1)
+            &(stim_info["B2"] == 1)
+            &(stim_info["A2"] == 1),
+            (stim_info["R1"] == 0.8117)
+            &(stim_info["G1"] == 0.7411)
+            &(stim_info["B1"] == 0.1882)
+            &(stim_info["A1"] == 1)
+            &(stim_info["R2"] == 0.8117)
+            &(stim_info["G2"] == 0.7411)
+            &(stim_info["B2"] == 0.1882)
+            &(stim_info["A2"] == 1),
+            (stim_info["R1"] == 0)
+            &(stim_info["G1"] == 0)
+            &(stim_info["B1"] == 0)
+            &(stim_info["A1"] == 1)
+            &(stim_info["R2"] == 1)
+            &(stim_info["G2"] == 1)
+            &(stim_info["B2"] == 1)
+            &(stim_info["A2"] == 1),
+            (stim_info["R1"] == 1)
+            &(stim_info["G1"] == 1)
+            &(stim_info["B1"] == 1)
+            &(stim_info["A1"] == 1)
+            &(stim_info["R2"] == 0)
+            &(stim_info["G2"] == 0)
+            &(stim_info["B2"] == 0)
+            &(stim_info["A2"] == 1),
+            (stim_info["R1"] == 0.8117)
+            &(stim_info["G1"] == 0.7411)
+            &(stim_info["B1"] == 0.1882)
+            &(stim_info["A1"] == 1)
+            &(stim_info["R2"] == 1)
+            &(stim_info["G2"] == 1)
+            &(stim_info["B2"] == 1)
+            &(stim_info["A2"] == 1),
+            (stim_info["R2"] == 0.8117)
+            &(stim_info["G2"] == 0.7411)
+            &(stim_info["B2"] == 0.1882)
+            &(stim_info["A2"] == 1)
+            &(stim_info["R1"] == 1)
+            &(stim_info["G1"] == 1)
+            &(stim_info["B1"] == 1)
+            &(stim_info["A1"] == 1),
+            (stim_info["R1"] == 0.8117)
+            &(stim_info["G1"] == 0.7411)
+            &(stim_info["B1"] == 0.1882)
+            &(stim_info["A1"] == 1)
+            &(stim_info["R2"] == 0)
+            &(stim_info["G2"] == 0)
+            &(stim_info["B2"] == 0)
+            &(stim_info["A2"] == 1),
+            (stim_info["R2"] == 0.8117)
+            &(stim_info["G2"] == 0.7411)
+            &(stim_info["B2"] == 0.1882)
+            &(stim_info["A2"] == 1)
+            &(stim_info["R1"] == 0)
+            &(stim_info["G1"] == 0)
+            &(stim_info["B1"] == 0)
+            &(stim_info["A1"] == 1)
+            ]
+            stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
+        elif 'R1' in this_column_names and visual_paradigm_name.lower()== "sweeping":
             stim_type = ['black_dir1','green_dir1','yellow_dir1','white_dir1','black_di2','green_dir2','yellow_dir2','white_dir2']#dir2 means downward; dir1 means upward
             filters = [
             (stim_info["R1"] == 0)
@@ -702,7 +809,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
         ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         ## update the stim_type if the locustTexture1 is 1    
-        if stim_info['LocustTexture1'].max()==1:
+        if stim_info['LocustTexture1'].max()==1 and visual_paradigm_name=="looming":
             stim_info["stim_type"][stim_info['LocustTexture1']==1]='gregarious_locust'
     else:
         col_index = [2, 3, 4, 5, 7, 11, 13, 15, 17]
@@ -999,7 +1106,7 @@ if __name__ == "__main__":
             analysis_methods = json.loads(f.read())
     #analysis_methods.update({"experiment_name":"looming"})
     #analysis_methods.update({"experiment_name":"gratings"})
-    analysis_methods.update({"experiment_name":"coherence"})
+    #analysis_methods.update({"experiment_name":"coherence"})
     #stim_directory=r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25018\250519\looming\session1"
     # stim_directory=r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25018\250519\gratings\session1"
     # trial_ext = "trial*.csv"
@@ -1008,16 +1115,17 @@ if __name__ == "__main__":
     # meta_info, _ = sorting_trial_info(stim_pd,analysis_methods)
     #thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24036\240801\coherence\session1"
     #thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25102\250929\coherence\session1"
-    thisDir = r"Y:\GN25051\251101\gratings\session1"
+    #thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25101\250917\looming\session1"
+    thisDir = r"Y:\GN25051\251101\sweeping\session1"
     #thisDir = r"C:\Users\neuroLaptop\Documents\GN25006\250312\receding\session1"
     # thisDir = r"C:\Users\neuroLaptop\Documents\GN25040\250106\speed\session1"
     json_file = r".\analysis_methods_dictionary.json"
-    # tic = time.perf_counter()
+    tic = time.perf_counter()
     # old_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\lux4_2024-12-09T12_02_03.csv"
     # new_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\camera4_2024-12-09T12_02_03.csv"
     # update_csv_value_pd(old_csv_path, new_csv_path, 0)
     preprocess_fictrac_data(thisDir, json_file,[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23])
-    # toc = time.perf_counter()
-    # print(f"it takes {toc-tic:0.4f} seconds to run the main function")
+    toc = time.perf_counter()
+    print(f"it takes {toc-tic:0.4f} seconds to run the main function")
     # this_file = r"Z:\Users\chiyu\DL220THP_Thermo1_240904_240908.csv"
     # load_temperature_data(this_file)
