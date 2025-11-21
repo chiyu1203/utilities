@@ -928,7 +928,7 @@ def generate_timestamp_csv(file_path):
     return data
 
 
-def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23]):
+def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 3, 4, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23]):
     # load analysis methods
     
     track_ball_radius = analysis_methods.get("trackball_radius")
@@ -973,6 +973,8 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
         inplace=True,
     )
     raw_data.columns = [
+        "delta rotation vector lab x",
+        "delta rotation vector lab y",
         "delta rotation vector lab z",
         "intergrated x position",
         "intergrated y position",
@@ -1030,6 +1032,12 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
         raw_data.loc[:, ["intergrated y position"]] * track_ball_radius
     )
     ## adjust the unit of the z vector based on the target frame rate of fictrac to get angular velocity omega
+    raw_data.loc[:, ["delta rotation vector lab x"]] = (
+        raw_data.loc[:, ["delta rotation vector lab x"]] * camera_fps
+    )
+    raw_data.loc[:, ["delta rotation vector lab y"]] = (
+        raw_data.loc[:, ["delta rotation vector lab y"]] * camera_fps
+    )
     raw_data.loc[:, ["delta rotation vector lab z"]] = (
         raw_data.loc[:, ["delta rotation vector lab z"]] * camera_fps
     )
@@ -1069,7 +1077,7 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
     return raw_data
 
 
-def preprocess_fictrac_data(thisDir, json_file,column_to_drop=[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23]):
+def preprocess_fictrac_data(thisDir, json_file,column_to_drop=[0, 1, 2, 3, 4, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23]):
     if isinstance(json_file, dict):
         analysis_methods = json_file
     else:
@@ -1124,7 +1132,7 @@ if __name__ == "__main__":
     # old_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\lux4_2024-12-09T12_02_03.csv"
     # new_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\camera4_2024-12-09T12_02_03.csv"
     # update_csv_value_pd(old_csv_path, new_csv_path, 0)
-    preprocess_fictrac_data(thisDir, json_file,[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23])
+    preprocess_fictrac_data(thisDir, json_file)
     toc = time.perf_counter()
     print(f"it takes {toc-tic:0.4f} seconds to run the main function")
     # this_file = r"Z:\Users\chiyu\DL220THP_Thermo1_240904_240908.csv"
