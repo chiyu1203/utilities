@@ -1041,32 +1041,35 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
     raw_data.loc[:, ["delta rotation vector lab z"]] = (
         raw_data.loc[:, ["delta rotation vector lab z"]] * camera_fps
     )
-    remove_old_fictrac_database = False
-    if remove_old_fictrac_database & overwrite_curated_dataset:
-        old_database_pattern = f"database_curated*.pickle"
-        found_result = find_file(thisDir, old_database_pattern)
-        if found_result.is_file() == True:
-            try:
-                Path.unlink(found_result)
-            except OSError as e:
-                print("Error: %s - %s." % (e.filename, e.strerror))
-        elif isinstance(found_result, list):
-            for this_file in found_result:
-                try:
-                    Path.unlink(this_file)
-                except OSError as e:
-                    print("Error: %s - %s." % (e.filename, e.strerror))
+    # remove_old_fictrac_database = False
+    # if remove_old_fictrac_database & overwrite_curated_dataset:
+    #     old_database_pattern = f"database_curated*.pickle"
+    #     found_result = find_file(thisDir, old_database_pattern)
+    #     if found_result.is_file() == True:
+    #         try:
+    #             Path.unlink(found_result)
+    #         except OSError as e:
+    #             print("Error: %s - %s." % (e.filename, e.strerror))
+    #     elif isinstance(found_result, list):
+    #         for this_file in found_result:
+    #             try:
+    #                 Path.unlink(this_file)
+    #             except OSError as e:
+    #                 print("Error: %s - %s." % (e.filename, e.strerror))
 
     ### save the curated_database
     if analysis_methods.get("save_output") == True:
-        database_name = f"database_{file_name}.pickle"
-        database_directory = this_file.parent.joinpath(database_name)
+        #database_name = f"database_{file_name}.pickle"
+        #database_directory = this_file.parent.joinpath(database_name)
+        parquet_name = f"database_{file_name}.parquet.gzip"
+        parquet_directory = this_file.parent.joinpath(parquet_name)
         if (overwrite_curated_dataset == False) and (
-            database_directory.is_file() == True
+            parquet_directory.is_file() == True
         ):
             print(f"do not overwrite existing pickle file {this_file}")
         else:
-            raw_data.to_pickle(database_directory)
+            #raw_data.to_pickle(database_directory)
+            raw_data.to_parquet(parquet_directory,compression='gzip')
         # old_database_name = f"database_curated.pickle"
         # old_database_dir = this_file.parent.joinpath(old_database_name)
         # if old_database_dir.is_file() == True:
@@ -1127,7 +1130,7 @@ if __name__ == "__main__":
     thisDir = r"Y:\GN25051\251101\sweeping\session1"
     #thisDir = r"C:\Users\neuroLaptop\Documents\GN25006\250312\receding\session1"
     # thisDir = r"C:\Users\neuroLaptop\Documents\GN25040\250106\speed\session1"
-    json_file = r".\analysis_methods_dictionary.json"
+    json_file = r"..\ephys\analysis_methods_dictionary.json"
     tic = time.perf_counter()
     # old_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\lux4_2024-12-09T12_02_03.csv"
     # new_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\camera4_2024-12-09T12_02_03.csv"
