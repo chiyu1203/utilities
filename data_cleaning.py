@@ -542,7 +542,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
         elif visual_paradigm_name.lower() == "gratings":
             stim_info["stim_type"] = stim_info["PolarBeginDegree1"].astype(int)
         elif visual_paradigm_name.lower()=="flashing":
-            stim_type = ['black','blue','locust yellow','white','green']
+            stim_type = ['black','blue','locust_yellow','white','green','locust_green']
             filters = [
             (stim_info["R1"] == 0)
             &(stim_info["G1"] == 0)
@@ -558,11 +558,14 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["B1"] == 1),
             (stim_info["R1"] == 0)
             &(stim_info["G1"] == 1)
-            &(stim_info["B1"] == 0)
+            &(stim_info["B1"] == 0),
+            (stim_info["R1"] == 0.5882)
+            &(stim_info["G1"] == 0.6705)
+            &(stim_info["B1"] == 0.3176)
         ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif 'R1' in this_column_names and visual_paradigm_name.lower()=="looming":
-            stim_type = ['black','green','yellow','white','luminance_control','black_receding','grey','blue']
+            stim_type = ['black','locust_green','locust_yellow','white','luminance_control','black_receding','grey','blue']
             filters = [
             (stim_info["R1"] == 0)
             &(stim_info["G1"] == 0)
@@ -710,7 +713,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif 'R1' in this_column_names and visual_paradigm_name.lower()== "sweeping":
-            stim_type = ['black_dir1','green_dir1','yellow_dir1','white_dir1','black_di2','green_dir2','yellow_dir2','white_dir2','green_dir1','green_dir2']#dir2 means downward; dir1 means upward
+            stim_type = ['black_dir1','locust_green_dir1','locust_yellow_dir1','white_dir1','black_di2','locust_green_dir2','locust_yellow_dir2','white_dir2','green_dir1','green_dir2']#dir2 means downward; dir1 means upward
             filters = [
             (stim_info["R1"] == 0)
             &(stim_info["G1"] == 0)
