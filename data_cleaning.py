@@ -38,7 +38,6 @@ from scipy.interpolate import interp1d
 #     return dist
 def remove_false_detection_heading(df, angle_col='heading_direction', threshold_upper=None, threshold_lower=None, threshold_range=None):
 ### written by Aljoscha Markus 27/06/2025
-    df = df.copy()
     y = df[angle_col].values
     dy = np.diff(y)
 
@@ -60,7 +59,17 @@ def remove_false_detection_heading(df, angle_col='heading_direction', threshold_
             mask[flaw[i]:flaw[i + 1] + 1] = True
 
         # Apply mask and interpolate
-        y[mask] = np.nan
+        # y[mask] = np.nan
+        # corrected_y=pd.Series(y).interpolate(method='linear').values
+        # fig2, (ax1,ax2) = plt.subplots(
+        # nrows=1, ncols=2, figsize=(27,10), tight_layout=True)
+        # ax1.plot(np.arange(df[angle_col].values[200000:250000].shape[0]),df[angle_col].values[200000:250000])
+        # ax2.plot(np.arange(corrected_y[200000:250000].shape[0]),corrected_y[200000:250000])
+        # ax1.set(title="raw heading")
+        # ax2.set(title="after remove_false_detection_heading")
+        # fig2.savefig(f'heading_testing.png')
+
+
         df[angle_col] = pd.Series(y).interpolate(method='linear')
     return df
 
