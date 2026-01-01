@@ -38,7 +38,6 @@ from scipy.interpolate import interp1d
 #     return dist
 def remove_false_detection_heading(df, angle_col='heading_direction', threshold_upper=None, threshold_lower=None, threshold_range=None):
 ### written by Aljoscha Markus 27/06/2025
-    df = df.copy()
     y = df[angle_col].values
     dy = np.diff(y)
 
@@ -60,7 +59,17 @@ def remove_false_detection_heading(df, angle_col='heading_direction', threshold_
             mask[flaw[i]:flaw[i + 1] + 1] = True
 
         # Apply mask and interpolate
-        y[mask] = np.nan
+        # y[mask] = np.nan
+        # corrected_y=pd.Series(y).interpolate(method='linear').values
+        # fig2, (ax1,ax2) = plt.subplots(
+        # nrows=1, ncols=2, figsize=(27,10), tight_layout=True)
+        # ax1.plot(np.arange(df[angle_col].values[200000:250000].shape[0]),df[angle_col].values[200000:250000])
+        # ax2.plot(np.arange(corrected_y[200000:250000].shape[0]),corrected_y[200000:250000])
+        # ax1.set(title="raw heading")
+        # ax2.set(title="after remove_false_detection_heading")
+        # fig2.savefig(f'heading_testing.png')
+
+
         df[angle_col] = pd.Series(y).interpolate(method='linear')
     return df
 
@@ -343,6 +352,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
     visual_paradigm_name = analysis_methods.get("experiment_name")
     exp_place = analysis_methods.get("exp_place")
     camera_fps=analysis_methods.get("camera_fps")
+    stim_duration=analysis_methods.get("stim_duration")
     pre_stim_interval = analysis_methods.get("prestim_duration")
     stim_info = stim_info.reset_index()
     first_event_time=stim_info.iloc[0,0]/camera_fps
@@ -879,6 +889,12 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
         ## update the stim_type if the locustTexture1 is 1    
         if stim_info['LocustTexture1'].max()==1 and visual_paradigm_name=="looming":
             stim_info["stim_type"][stim_info['LocustTexture1']==1]='gregarious_locust'
+        if visual_paradigm_name == "sweeping":### these additional conditions is needed because in the sweeping sequence experiment, each stimulus is 2 sec but there are multiple rounds
+            if type(stim_duration)==list:
+                if len(stim_duration)==1:
+                    stim_info["Duration"] = np.repeat(analysis_methods.get("stim_duration")[0], stim_info.shape[0])
+            elif type(stim_duration)==int or type(stim_duration)==float:
+                stim_info["Duration"] = np.repeat(analysis_methods.get("stim_duration"), stim_info.shape[0])
     else:
         col_index = [2, 3, 4, 5, 7, 11, 13, 15, 17]
         col_name = [
