@@ -447,7 +447,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 & (stim_info.iloc[:, 2] == stim_info.iloc[:, 3]),
             ]
         stim_info["stim_type"] = np.select(filters, stim_type)
-    elif visual_paradigm_name.lower() in ["conflict","looming","receding","gratings","sweeping","flashing"]:
+    elif visual_paradigm_name.lower() in ["conflict","looming","receding","gratings","sweeping","flashing","choices"]:
         stim_variable = []
         stimulus_timestamp = []
         num_trial_col=np.shape(stim_info)[1] - 2
@@ -476,7 +476,12 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 stim_variable.append(float(timestamp.replace(")", "")))
 
         stim_variable = np.array(stim_variable).reshape((len(stim_info), -1))
-        default_column_names = ["LocationBeginX1","LocationEndX1","LocationBeginZ1","LocationEndZ1","PolarBeginR1","PolarEndR1","PolarBeginDegree1","PolarEndDegree1","Phase1","PreMovDuration","Duration","PostMovDuration","ISI","LocustObj1","ReverseZ1","LocustTexture1","TranslationalGain","RotationalGain","R1","G1","B1","A1","R2","G2","B2","A2"] 
+        if visual_paradigm_name.lower() == "choices":
+            default_column_names = ["LocationBeginX1","LocationEndX1","LocationBeginZ1","LocationEndZ1","PolarBeginR1","PolarEndR1","PolarBeginDegree1","PolarEndDegree1","Phase1","PreMovDuration","Duration","PostMovDuration","ISI","LocustObj1","LocustObj2","HeadingAt0degree1","HeadingAt0degree2","LocustTexture1","LocustTexture2","TranslationalGain","RotationalGain","R1","G1","B1","A1","R2","G2","B2","A2"] 
+            cols_to_convert = ["LocustTexture1","LocustTexture2","HeadingAt0degree1","HeadingAt0degree2","LocustObj1","LocustObj2","PolarBeginDegree1","PolarEndDegree1","Phase1","Duration","TranslationalGain","RotationalGain"]
+        else:
+            default_column_names = ["LocationBeginX1","LocationEndX1","LocationBeginZ1","LocationEndZ1","PolarBeginR1","PolarEndR1","PolarBeginDegree1","PolarEndDegree1","Phase1","PreMovDuration","Duration","PostMovDuration","ISI","LocustObj1","ReverseZ1","LocustTexture1","TranslationalGain","RotationalGain","R1","G1","B1","A1","R2","G2","B2","A2"]
+            cols_to_convert = ["LocustTexture1","ReverseZ1","LocustObj1","PolarBeginDegree1","PolarEndDegree1","Phase1","Duration"]
         if stim_info['Timestamp'].dtypes=='float64':
             this_column_names=default_column_names[:stim_variable.shape[1]]
             stim_info_curated = pd.DataFrame(stim_variable, columns=this_column_names)
@@ -491,11 +496,80 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             this_column_names.append("ts")
             stim_info_curated = pd.DataFrame(stim_variable, columns=this_column_names)
             stim_info=stim_info_curated    
-        cols_to_convert = ["LocustTexture1","ReverseZ1","LocustObj1","PolarBeginDegree1","PolarEndDegree1","Phase1","Duration"]           
+        
         stim_info[cols_to_convert] = stim_info[cols_to_convert].astype(int)
         duration_sorted=sorted(stim_info["Duration"].unique())
         begin_degree_sorted=sorted(stim_info["PolarBeginDegree1"].unique())
-        if visual_paradigm_name.lower() == "conflict":
+
+        if visual_paradigm_name.lower()=="choices":
+            stim_type=['glocust_null','null_glocust','glocust_black','black_glocust','glocust_glocust','black_null','null_black','black_black']
+            filters=[
+            (stim_info["LocustTexture1"]==1)       
+            &(stim_info["R1"] == 0)
+            &(stim_info["G1"] == 0)
+            &(stim_info["B1"] == 0)
+            &(stim_info["A1"] == 1)
+            &(stim_info["A2"] ==0),
+            (stim_info["LocustTexture2"]==1)       
+            &(stim_info["R2"] == 0)
+            &(stim_info["G2"] == 0)
+            &(stim_info["B2"] == 0)
+            &(stim_info["A2"] == 1)
+            &(stim_info["A1"] ==0),
+            (stim_info["LocustTexture1"]==1)       
+            &(stim_info["R1"] == 0)
+            &(stim_info["G1"] == 0)
+            &(stim_info["B1"] == 0)
+            &(stim_info["A1"] == 1)
+            &(stim_info["LocustTexture2"]==0)       
+            &(stim_info["R2"] == 0)
+            &(stim_info["G2"] == 0)
+            &(stim_info["B2"] == 0)
+            &(stim_info["A2"] ==1),
+            (stim_info["LocustTexture1"]==0)       
+            &(stim_info["R1"] == 0)
+            &(stim_info["G1"] == 0)
+            &(stim_info["B1"] == 0)
+            &(stim_info["A1"] == 1)
+            &(stim_info["LocustTexture2"]==1)       
+            &(stim_info["R2"] == 0)
+            &(stim_info["G2"] == 0)
+            &(stim_info["B2"] == 0)
+            &(stim_info["A2"] ==1),
+            (stim_info["LocustTexture1"]==1)       
+            &(stim_info["R1"] == 0)
+            &(stim_info["G1"] == 0)
+            &(stim_info["B1"] == 0)
+            &(stim_info["A1"] == 1)
+            &(stim_info["LocustTexture2"]==1)       
+            &(stim_info["R2"] == 0)
+            &(stim_info["G2"] == 0)
+            &(stim_info["B2"] == 0)
+            &(stim_info["A2"] ==1),
+            (stim_info["LocustTexture1"]==0)       
+            &(stim_info["R1"] == 0)
+            &(stim_info["G1"] == 0)
+            &(stim_info["B1"] == 0)
+            &(stim_info["A1"] == 1)
+            &(stim_info["A2"] ==0),
+            (stim_info["LocustTexture2"]==0)       
+            &(stim_info["R2"] == 0)
+            &(stim_info["G2"] == 0)
+            &(stim_info["B2"] == 0)
+            &(stim_info["A2"] == 1)
+            &(stim_info["A1"] ==0),
+            (stim_info["LocustTexture1"]==0)       
+            &(stim_info["R1"] == 0)
+            &(stim_info["G1"] == 0)
+            &(stim_info["B1"] == 0)
+            &(stim_info["A1"] == 1)
+            &(stim_info["LocustTexture2"]==0)       
+            &(stim_info["R2"] == 0)
+            &(stim_info["G2"] == 0)
+            &(stim_info["B2"] == 0)
+            &(stim_info["A2"] ==1)]
+            stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified") 
+        elif visual_paradigm_name.lower() == "conflict":
             filters_all=[]
             stim_type_all=[]
             for duration1 in range(len(duration_sorted)):
@@ -534,8 +608,6 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["G1"] == 0)
             &(stim_info["B1"] == 1),
             (stim_info["R1"] == 0.8117)
-            &(stim_info["G1"] == 0.7411)
-            &(stim_info["B1"] == 0.1882),
             (stim_info["R1"] == 1)
             &(stim_info["G1"] == 1)
             &(stim_info["B1"] == 1),
@@ -543,8 +615,6 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["G1"] == 1)
             &(stim_info["B1"] == 0),
             (stim_info["R1"] == 0.5882)
-            &(stim_info["G1"] == 0.6705)
-            &(stim_info["B1"] == 0.3176)
         ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif 'R1' in this_column_names and visual_paradigm_name.lower()=="looming":
@@ -556,13 +626,9 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginR1"] > stim_info["PolarEndR1"]),
             (stim_info["R1"] == 0.5882)
-            &(stim_info["G1"] == 0.6705)
-            &(stim_info["B1"] == 0.3176)
             &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginR1"] > stim_info["PolarEndR1"]),
             (stim_info["R1"] == 0.8117)
-            &(stim_info["G1"] == 0.7411)
-            &(stim_info["B1"] == 0.1882)
             &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginR1"] > stim_info["PolarEndR1"]),
             (stim_info["R1"] == 1)
@@ -599,13 +665,9 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["B1"] == 1)
             &(stim_info["A1"] == 0),
             (stim_info["R1"] == 0.8117)
-            &(stim_info["G1"] == 0.7411)
-            &(stim_info["B1"] == 0.1882)
             &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginR1"] < stim_info["PolarEndR1"]),
             (stim_info["R1"] == 0.8117)
-            &(stim_info["G1"] == 0.7411)
-            &(stim_info["B1"] == 0.1882)
             &(stim_info["A1"] == 0),              
             (stim_info["R1"] == 1)
             &(stim_info["G1"] == 1)
@@ -618,7 +680,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["A1"] == 0)
         ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
-        elif 'R2' in this_column_names and visual_paradigm_name.lower()== "sweeping":
+        elif 'R2' in this_column_names and visual_paradigm_name.lower()=='sweeping':
             if stim_info['PolarBeginDegree1'].unique().shape[0]==1:
                 stim_type = ['black_null','white_null','yellow_null','null_black','null_white','null_yellow','black_black','white_white','yellow_yellow','black_white','white_black','yellow_white','white_yellow','yellow_black','black_yellow']
                 filters = [
@@ -633,8 +695,6 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 &(stim_info["A1"] == 1)
                 &(stim_info["A2"] ==0),
                 (stim_info["R1"] == 0.8117)
-                &(stim_info["G1"] == 0.7411)
-                &(stim_info["B1"] == 0.1882)
                 &(stim_info["A1"] == 1)
                 &(stim_info["A2"] ==0),
                 (stim_info["R2"] == 0)
@@ -648,8 +708,6 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 &(stim_info["A2"] == 1)
                 &(stim_info["A1"] ==0),
                 (stim_info["R2"] == 0.8117)
-                &(stim_info["G2"] == 0.7411)
-                &(stim_info["B2"] == 0.1882)
                 &(stim_info["A2"] == 1)
                 &(stim_info["A1"] ==0),
                 (stim_info["R1"] == 0)
@@ -669,12 +727,8 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 &(stim_info["B2"] == 1)
                 &(stim_info["A2"] == 1),
                 (stim_info["R1"] == 0.8117)
-                &(stim_info["G1"] == 0.7411)
-                &(stim_info["B1"] == 0.1882)
                 &(stim_info["A1"] == 1)
                 &(stim_info["R2"] == 0.8117)
-                &(stim_info["G2"] == 0.7411)
-                &(stim_info["B2"] == 0.1882)
                 &(stim_info["A2"] == 1),
                 (stim_info["R1"] == 0)
                 &(stim_info["G1"] == 0)
@@ -693,32 +747,24 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 &(stim_info["B2"] == 0)
                 &(stim_info["A2"] == 1),
                 (stim_info["R1"] == 0.8117)
-                &(stim_info["G1"] == 0.7411)
-                &(stim_info["B1"] == 0.1882)
                 &(stim_info["A1"] == 1)
                 &(stim_info["R2"] == 1)
                 &(stim_info["G2"] == 1)
                 &(stim_info["B2"] == 1)
                 &(stim_info["A2"] == 1),
                 (stim_info["R2"] == 0.8117)
-                &(stim_info["G2"] == 0.7411)
-                &(stim_info["B2"] == 0.1882)
                 &(stim_info["A2"] == 1)
                 &(stim_info["R1"] == 1)
                 &(stim_info["G1"] == 1)
                 &(stim_info["B1"] == 1)
                 &(stim_info["A1"] == 1),
                 (stim_info["R1"] == 0.8117)
-                &(stim_info["G1"] == 0.7411)
-                &(stim_info["B1"] == 0.1882)
                 &(stim_info["A1"] == 1)
                 &(stim_info["R2"] == 0)
                 &(stim_info["G2"] == 0)
                 &(stim_info["B2"] == 0)
                 &(stim_info["A2"] == 1),
                 (stim_info["R2"] == 0.8117)
-                &(stim_info["G2"] == 0.7411)
-                &(stim_info["B2"] == 0.1882)
                 &(stim_info["A2"] == 1)
                 &(stim_info["R1"] == 0)
                 &(stim_info["G1"] == 0)
@@ -752,7 +798,6 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 &(stim_info['PolarBeginDegree1']>stim_info['PolarEndDegree1']),
                 (stim_info["R1"] == 0.8117)
                 &(stim_info['PolarBeginDegree1']<stim_info['PolarEndDegree1'])]
-
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif 'R1' in this_column_names and visual_paradigm_name.lower()== "sweeping":
             stim_type = ['black_dir1','locust_green_dir1','locust_yellow_dir1','white_dir1','black_di2','locust_green_dir2','locust_yellow_dir2','white_dir2','green_dir1','green_dir2']#dir2 means downward; dir1 means upward
@@ -763,13 +808,9 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginDegree1"] > stim_info["PolarEndDegree1"]),
             (stim_info["R1"] == 0.5882)
-            &(stim_info["G1"] == 0.6705)
-            &(stim_info["B1"] == 0.3176)
             &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginDegree1"] > stim_info["PolarEndDegree1"]),
             (stim_info["R1"] == 0.8117)
-            &(stim_info["G1"] == 0.7411)
-            &(stim_info["B1"] == 0.1882)
             &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginDegree1"] > stim_info["PolarEndDegree1"]),
             (stim_info["R1"] == 1)
@@ -783,13 +824,9 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginDegree1"] < stim_info["PolarEndDegree1"]),
             (stim_info["R1"] == 0.5882)
-            &(stim_info["G1"] == 0.6705)
-            &(stim_info["B1"] == 0.3176)
             &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginDegree1"] < stim_info["PolarEndDegree1"]),
             (stim_info["R1"] == 0.8117)
-            &(stim_info["G1"] == 0.7411)
-            &(stim_info["B1"] == 0.1882)
             &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginDegree1"] < stim_info["PolarEndDegree1"]),
             (stim_info["R1"] == 1)
@@ -1111,22 +1148,24 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
     for ind in range(0, raw_data.shape[1] - 1):
         raw_data.iloc[:, ind] = pd.to_numeric(raw_data.iloc[:, ind]).astype("float32")
     ## adjust the unit of the x, y position from radiam to mm
-    raw_data.loc[:, ["intergrated x position"]] = (
-        raw_data.loc[:, ["intergrated x position"]] * track_ball_radius
-    )
-    raw_data.loc[:, ["intergrated y position"]] = (
-        raw_data.loc[:, ["intergrated y position"]] * track_ball_radius
-    )
+    raw_data[["intergrated x position","intergrated y position"]]=raw_data[["intergrated x position","intergrated y position"]]*track_ball_radius
+    # raw_data.loc[:, ["intergrated x position"]] = (
+    #     raw_data.loc[:, ["intergrated x position"]] * track_ball_radius
+    # )
+    # raw_data.loc[:, ["intergrated y position"]] = (
+    #     raw_data.loc[:, ["intergrated y position"]] * track_ball_radius
+    # )
     ## adjust the unit of the z vector based on the target frame rate of fictrac to get angular velocity omega
-    raw_data.loc[:, ["delta rotation vector lab x"]] = (
-        raw_data.loc[:, ["delta rotation vector lab x"]] * camera_fps
-    )
-    raw_data.loc[:, ["delta rotation vector lab y"]] = (
-        raw_data.loc[:, ["delta rotation vector lab y"]] * camera_fps
-    )
-    raw_data.loc[:, ["delta rotation vector lab z"]] = (
-        raw_data.loc[:, ["delta rotation vector lab z"]] * camera_fps
-    )
+    raw_data[["delta rotation vector lab x","delta rotation vector lab y","delta rotation vector lab z"]]=raw_data[["delta rotation vector lab x","delta rotation vector lab y","delta rotation vector lab z"]]*camera_fps
+    # raw_data.loc[:, ["delta rotation vector lab x"]] = (
+    #     raw_data.loc[:, ["delta rotation vector lab x"]] * camera_fps
+    # )
+    # raw_data.loc[:, ["delta rotation vector lab y"]] = (
+    #     raw_data.loc[:, ["delta rotation vector lab y"]] * camera_fps
+    # )
+    # raw_data.loc[:, ["delta rotation vector lab z"]] = (
+    #     raw_data.loc[:, ["delta rotation vector lab z"]] * camera_fps
+    # )
     # remove_old_fictrac_database = False
     # if remove_old_fictrac_database & overwrite_curated_dataset:
     #     old_database_pattern = f"database_curated*.pickle"
