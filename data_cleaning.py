@@ -496,59 +496,32 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
         duration_sorted=sorted(stim_info["Duration"].unique())
         begin_degree_sorted=sorted(stim_info["PolarBeginDegree1"].unique())
         if visual_paradigm_name.lower() == "conflict":
-            stim_type = [
-                "cc_back_slow",
-                "cc_back_medium",
-                "cc_back_fast",
-                "cc_front_slow",
-                "cc_front_medium",
-                "cc_front_fast",
-                "c_back_slow",
-                "c_back_medium",
-                "c_back_fast",
-                "c_front_slow",
-                "c_front_medium",
-                "c_front_fast",
-            ]
-            filters = [
-            (stim_info["Duration"] == duration_sorted[2])
-            & (stim_info["Phase1"] == 180)
-            & (stim_info["PolarEndDegree1"] < stim_info["PolarBeginDegree1"]),
-            (stim_info["Duration"] == duration_sorted[1])
-            & (stim_info["Phase1"] == 180)
-            & (stim_info["PolarEndDegree1"] < stim_info["PolarBeginDegree1"]),
-            (stim_info["Duration"] == duration_sorted[0])
-            & (stim_info["Phase1"] == 180)
-            & (stim_info["PolarEndDegree1"] < stim_info["PolarBeginDegree1"]),
-            (stim_info["Duration"] == duration_sorted[2])
-            & (stim_info["Phase1"] == 0)
-            & (stim_info["PolarEndDegree1"] < stim_info["PolarBeginDegree1"]),
-            (stim_info["Duration"] == duration_sorted[1])
-            & (stim_info["Phase1"] == 0)
-            & (stim_info["PolarEndDegree1"] < stim_info["PolarBeginDegree1"]),
-            (stim_info["Duration"] == duration_sorted[0])
-            & (stim_info["Phase1"] == 0)
-            & (stim_info["PolarEndDegree1"] < stim_info["PolarBeginDegree1"]),
-            (stim_info["Duration"] == duration_sorted[2])
-            & (stim_info["Phase1"] == 180)
-            & (stim_info["PolarEndDegree1"] > stim_info["PolarBeginDegree1"]),
-            (stim_info["Duration"] == duration_sorted[1])
-            & (stim_info["Phase1"] == 180)
-            & (stim_info["PolarEndDegree1"] > stim_info["PolarBeginDegree1"]),
-            (stim_info["Duration"] == duration_sorted[0])
-            & (stim_info["Phase1"] == 180)
-            & (stim_info["PolarEndDegree1"] > stim_info["PolarBeginDegree1"]),
-            (stim_info["Duration"] == duration_sorted[2])
-            & (stim_info["Phase1"] == 0)
-            & (stim_info["PolarEndDegree1"] > stim_info["PolarBeginDegree1"]),
-            (stim_info["Duration"] == duration_sorted[1])
-            & (stim_info["Phase1"] == 0)
-            & (stim_info["PolarEndDegree1"] > stim_info["PolarBeginDegree1"]),
-            (stim_info["Duration"] == duration_sorted[0])
-            & (stim_info["Phase1"] == 0)
-            & (stim_info["PolarEndDegree1"] > stim_info["PolarBeginDegree1"]),
-        ]
-            stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
+            filters_all=[]
+            stim_type_all=[]
+            for duration1 in range(len(duration_sorted)):
+                filters = [
+                (stim_info["Duration"] == duration_sorted[duration1])
+                & (stim_info["Phase1"] == 180)
+                & (stim_info["PolarEndDegree1"] < stim_info["PolarBeginDegree1"]),
+                (stim_info["Duration"] == duration_sorted[duration1])
+                & (stim_info["Phase1"] == 0)
+                & (stim_info["PolarEndDegree1"] < stim_info["PolarBeginDegree1"]),
+                (stim_info["Duration"] == duration_sorted[duration1])
+                & (stim_info["Phase1"] == 180)
+                & (stim_info["PolarEndDegree1"] > stim_info["PolarBeginDegree1"]),
+                (stim_info["Duration"] == duration_sorted[duration1])
+                & (stim_info["Phase1"] == 0)
+                & (stim_info["PolarEndDegree1"] > stim_info["PolarBeginDegree1"])]
+                stim_type=[
+                    f"cc_back_{duration_sorted[duration1]}",
+                    f"cc_front_{duration_sorted[duration1]}",
+                    f"c_back_{duration_sorted[duration1]}",
+                    f"c_front_{duration_sorted[duration1]}",
+                ]
+                filters_all.extend(filters)
+                stim_type_all.extend(stim_type)
+            stim_type=stim_type_all
+            stim_info["stim_type"] = np.select(filters_all, stim_type,default="unclassified")
         elif visual_paradigm_name.lower() == "gratings":
             stim_info["stim_type"] = stim_info["PolarBeginDegree1"].astype(int)
         elif visual_paradigm_name.lower()=="flashing":
@@ -646,111 +619,140 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
         ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif 'R2' in this_column_names and visual_paradigm_name.lower()== "sweeping":
-            stim_type = ['black_null','white_null','yellow_null','null_black','null_white','null_yellow','black_black','white_white','yellow_yellow','black_white','white_black','yellow_white','white_yellow','yellow_black','black_yellow']
-            filters = [
-            (stim_info["R1"] == 0)
-            &(stim_info["G1"] == 0)
-            &(stim_info["B1"] == 0)
-            &(stim_info["A1"] == 1)
-            &(stim_info["A2"] ==0),
-            (stim_info["R1"] == 1)
-            &(stim_info["G1"] == 1)
-            &(stim_info["B1"] == 1)
-            &(stim_info["A1"] == 1)
-            &(stim_info["A2"] ==0),
-            (stim_info["R1"] == 0.8117)
-            &(stim_info["G1"] == 0.7411)
-            &(stim_info["B1"] == 0.1882)
-            &(stim_info["A1"] == 1)
-            &(stim_info["A2"] ==0),
-            (stim_info["R2"] == 0)
-            &(stim_info["G2"] == 0)
-            &(stim_info["B2"] == 0)
-            &(stim_info["A2"] == 1)
-            &(stim_info["A1"] ==0),
-            (stim_info["R2"] == 1)
-            &(stim_info["G2"] == 1)
-            &(stim_info["B2"] == 1)
-            &(stim_info["A2"] == 1)
-            &(stim_info["A1"] ==0),
-            (stim_info["R2"] == 0.8117)
-            &(stim_info["G2"] == 0.7411)
-            &(stim_info["B2"] == 0.1882)
-            &(stim_info["A2"] == 1)
-            &(stim_info["A1"] ==0),
-            (stim_info["R1"] == 0)
-            &(stim_info["G1"] == 0)
-            &(stim_info["B1"] == 0)
-            &(stim_info["A1"] == 1)
-            &(stim_info["R2"] == 0)
-            &(stim_info["G2"] == 0)
-            &(stim_info["B2"] == 0)
-            &(stim_info["A2"] == 1),
-            (stim_info["R1"] == 1)
-            &(stim_info["G1"] == 1)
-            &(stim_info["B1"] == 1)
-            &(stim_info["A1"] == 1)
-            &(stim_info["R2"] == 1)
-            &(stim_info["G2"] == 1)
-            &(stim_info["B2"] == 1)
-            &(stim_info["A2"] == 1),
-            (stim_info["R1"] == 0.8117)
-            &(stim_info["G1"] == 0.7411)
-            &(stim_info["B1"] == 0.1882)
-            &(stim_info["A1"] == 1)
-            &(stim_info["R2"] == 0.8117)
-            &(stim_info["G2"] == 0.7411)
-            &(stim_info["B2"] == 0.1882)
-            &(stim_info["A2"] == 1),
-            (stim_info["R1"] == 0)
-            &(stim_info["G1"] == 0)
-            &(stim_info["B1"] == 0)
-            &(stim_info["A1"] == 1)
-            &(stim_info["R2"] == 1)
-            &(stim_info["G2"] == 1)
-            &(stim_info["B2"] == 1)
-            &(stim_info["A2"] == 1),
-            (stim_info["R1"] == 1)
-            &(stim_info["G1"] == 1)
-            &(stim_info["B1"] == 1)
-            &(stim_info["A1"] == 1)
-            &(stim_info["R2"] == 0)
-            &(stim_info["G2"] == 0)
-            &(stim_info["B2"] == 0)
-            &(stim_info["A2"] == 1),
-            (stim_info["R1"] == 0.8117)
-            &(stim_info["G1"] == 0.7411)
-            &(stim_info["B1"] == 0.1882)
-            &(stim_info["A1"] == 1)
-            &(stim_info["R2"] == 1)
-            &(stim_info["G2"] == 1)
-            &(stim_info["B2"] == 1)
-            &(stim_info["A2"] == 1),
-            (stim_info["R2"] == 0.8117)
-            &(stim_info["G2"] == 0.7411)
-            &(stim_info["B2"] == 0.1882)
-            &(stim_info["A2"] == 1)
-            &(stim_info["R1"] == 1)
-            &(stim_info["G1"] == 1)
-            &(stim_info["B1"] == 1)
-            &(stim_info["A1"] == 1),
-            (stim_info["R1"] == 0.8117)
-            &(stim_info["G1"] == 0.7411)
-            &(stim_info["B1"] == 0.1882)
-            &(stim_info["A1"] == 1)
-            &(stim_info["R2"] == 0)
-            &(stim_info["G2"] == 0)
-            &(stim_info["B2"] == 0)
-            &(stim_info["A2"] == 1),
-            (stim_info["R2"] == 0.8117)
-            &(stim_info["G2"] == 0.7411)
-            &(stim_info["B2"] == 0.1882)
-            &(stim_info["A2"] == 1)
-            &(stim_info["R1"] == 0)
-            &(stim_info["G1"] == 0)
-            &(stim_info["B1"] == 0)
-            &(stim_info["A1"] == 1)
-            ]
+            if stim_info['PolarBeginDegree1'].unique().shape[0]==1:
+                stim_type = ['black_null','white_null','yellow_null','null_black','null_white','null_yellow','black_black','white_white','yellow_yellow','black_white','white_black','yellow_white','white_yellow','yellow_black','black_yellow']
+                filters = [
+                (stim_info["R1"] == 0)
+                &(stim_info["G1"] == 0)
+                &(stim_info["B1"] == 0)
+                &(stim_info["A1"] == 1)
+                &(stim_info["A2"] ==0),
+                (stim_info["R1"] == 1)
+                &(stim_info["G1"] == 1)
+                &(stim_info["B1"] == 1)
+                &(stim_info["A1"] == 1)
+                &(stim_info["A2"] ==0),
+                (stim_info["R1"] == 0.8117)
+                &(stim_info["G1"] == 0.7411)
+                &(stim_info["B1"] == 0.1882)
+                &(stim_info["A1"] == 1)
+                &(stim_info["A2"] ==0),
+                (stim_info["R2"] == 0)
+                &(stim_info["G2"] == 0)
+                &(stim_info["B2"] == 0)
+                &(stim_info["A2"] == 1)
+                &(stim_info["A1"] ==0),
+                (stim_info["R2"] == 1)
+                &(stim_info["G2"] == 1)
+                &(stim_info["B2"] == 1)
+                &(stim_info["A2"] == 1)
+                &(stim_info["A1"] ==0),
+                (stim_info["R2"] == 0.8117)
+                &(stim_info["G2"] == 0.7411)
+                &(stim_info["B2"] == 0.1882)
+                &(stim_info["A2"] == 1)
+                &(stim_info["A1"] ==0),
+                (stim_info["R1"] == 0)
+                &(stim_info["G1"] == 0)
+                &(stim_info["B1"] == 0)
+                &(stim_info["A1"] == 1)
+                &(stim_info["R2"] == 0)
+                &(stim_info["G2"] == 0)
+                &(stim_info["B2"] == 0)
+                &(stim_info["A2"] == 1),
+                (stim_info["R1"] == 1)
+                &(stim_info["G1"] == 1)
+                &(stim_info["B1"] == 1)
+                &(stim_info["A1"] == 1)
+                &(stim_info["R2"] == 1)
+                &(stim_info["G2"] == 1)
+                &(stim_info["B2"] == 1)
+                &(stim_info["A2"] == 1),
+                (stim_info["R1"] == 0.8117)
+                &(stim_info["G1"] == 0.7411)
+                &(stim_info["B1"] == 0.1882)
+                &(stim_info["A1"] == 1)
+                &(stim_info["R2"] == 0.8117)
+                &(stim_info["G2"] == 0.7411)
+                &(stim_info["B2"] == 0.1882)
+                &(stim_info["A2"] == 1),
+                (stim_info["R1"] == 0)
+                &(stim_info["G1"] == 0)
+                &(stim_info["B1"] == 0)
+                &(stim_info["A1"] == 1)
+                &(stim_info["R2"] == 1)
+                &(stim_info["G2"] == 1)
+                &(stim_info["B2"] == 1)
+                &(stim_info["A2"] == 1),
+                (stim_info["R1"] == 1)
+                &(stim_info["G1"] == 1)
+                &(stim_info["B1"] == 1)
+                &(stim_info["A1"] == 1)
+                &(stim_info["R2"] == 0)
+                &(stim_info["G2"] == 0)
+                &(stim_info["B2"] == 0)
+                &(stim_info["A2"] == 1),
+                (stim_info["R1"] == 0.8117)
+                &(stim_info["G1"] == 0.7411)
+                &(stim_info["B1"] == 0.1882)
+                &(stim_info["A1"] == 1)
+                &(stim_info["R2"] == 1)
+                &(stim_info["G2"] == 1)
+                &(stim_info["B2"] == 1)
+                &(stim_info["A2"] == 1),
+                (stim_info["R2"] == 0.8117)
+                &(stim_info["G2"] == 0.7411)
+                &(stim_info["B2"] == 0.1882)
+                &(stim_info["A2"] == 1)
+                &(stim_info["R1"] == 1)
+                &(stim_info["G1"] == 1)
+                &(stim_info["B1"] == 1)
+                &(stim_info["A1"] == 1),
+                (stim_info["R1"] == 0.8117)
+                &(stim_info["G1"] == 0.7411)
+                &(stim_info["B1"] == 0.1882)
+                &(stim_info["A1"] == 1)
+                &(stim_info["R2"] == 0)
+                &(stim_info["G2"] == 0)
+                &(stim_info["B2"] == 0)
+                &(stim_info["A2"] == 1),
+                (stim_info["R2"] == 0.8117)
+                &(stim_info["G2"] == 0.7411)
+                &(stim_info["B2"] == 0.1882)
+                &(stim_info["A2"] == 1)
+                &(stim_info["R1"] == 0)
+                &(stim_info["G1"] == 0)
+                &(stim_info["B1"] == 0)
+                &(stim_info["A1"] == 1)
+                ]
+            elif stim_info['PolarBeginDegree1'].unique().shape[0]==2:
+                stim_type = ['black_ccw','black_cw','white_ccw','white_cw','yellow_ccw','yellow_cw']
+                filters = [
+                (stim_info["R1"] == 0)
+                &(stim_info["G1"] == 0)
+                &(stim_info["B1"] == 0)
+                &(stim_info["A1"] == 1)
+                &(stim_info['PolarBeginDegree1']>stim_info['PolarEndDegree1']),
+                (stim_info["R1"] == 0)
+                &(stim_info["G1"] == 0)
+                &(stim_info["B1"] == 0)
+                &(stim_info["A1"] == 1)
+                &(stim_info['PolarBeginDegree1']<stim_info['PolarEndDegree1']),
+                (stim_info["R1"] == 1)
+                &(stim_info["G1"] == 1)
+                &(stim_info["B1"] == 1)
+                &(stim_info["A1"] == 1)
+                &(stim_info['PolarBeginDegree1']>stim_info['PolarEndDegree1']),
+                (stim_info["R1"] == 1)
+                &(stim_info["G1"] == 1)
+                &(stim_info["B1"] == 1)
+                &(stim_info["A1"] == 1)
+                &(stim_info['PolarBeginDegree1']<stim_info['PolarEndDegree1']),
+                (stim_info["R1"] == 0.8117)
+                &(stim_info['PolarBeginDegree1']>stim_info['PolarEndDegree1']),
+                (stim_info["R1"] == 0.8117)
+                &(stim_info['PolarBeginDegree1']<stim_info['PolarEndDegree1'])]
+
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif 'R1' in this_column_names and visual_paradigm_name.lower()== "sweeping":
             stim_type = ['black_dir1','locust_green_dir1','locust_yellow_dir1','white_dir1','black_di2','locust_green_dir2','locust_yellow_dir2','white_dir2','green_dir1','green_dir2']#dir2 means downward; dir1 means upward
