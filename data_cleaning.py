@@ -146,17 +146,23 @@ def findLongestConseqSubseq(arr, n):
 
 
 def diskretize(
-    x, y, bodylength
+    x=None, y=None,distance=None,diskretise_length=24,
 ):  # discretize data into equidistant points, using body length (https://stackoverflow.com/questions/19117660/how-to-generate-equispaced-interpolating-values)
     # code writen by Sercan Sayin and described in (https://www.science.org/doi/10.1126/science.adq7832)
-    # the source code can be found in (https://zenodo.org/records/14355590)
-    tol = bodylength  # 12cm ,roughly 3BL
+    # the source code can be found in (https://zenodo.org/records/14355590) # 12cm ,roughly 3BL
+    if isinstance(x, list):
+        analysis_len=len(x)    
+    else:
+        analysis_len=distance.shape[0]
     i, idx = 0, [0]
-    while i < len(x) - 1:
-        total_dist = 0
-        for j in range(i + 1, len(x)):
-            total_dist = math.sqrt((x[j] - x[i]) ** 2 + (y[j] - y[i]) ** 2)
-            if total_dist > tol:
+    while i < analysis_len - 1:
+        cumulated_dist = 0
+        for j in range(i + 1, analysis_len):
+            if isinstance(x, list):
+                cumulated_dist = math.sqrt((x[j] - x[i]) ** 2 + (y[j] - y[i]) ** 2)
+            else:
+                cumulated_dist=distance[i]
+            if cumulated_dist > diskretise_length:
                 idx.append(j)
                 break
         i = j + 1
@@ -1054,13 +1060,14 @@ def generate_timestamp_csv(file_path):
 def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 3, 4, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23]):
     # load analysis methods
     
-    track_ball_radius = analysis_methods.get("trackball_radius")
+    track_ball_radius = analysis_methods.get("trackball_radius",5)## track ball radius in (cm)
     monitor_fps = analysis_methods.get("monitor_fps")
     camera_fps = analysis_methods.get("camera_fps")
     fictrac_posthoc_analysis = analysis_methods.get("fictrac_posthoc_analysis")
     overwrite_curated_dataset = analysis_methods.get("overwrite_curated_dataset")
     # laod file
     file_name = Path(this_file).stem
+    thisDir=Path(this_file).parent
     experiment_timestamp = file_name.split("-")
     raw_data = pd.read_table(this_file, sep="\s+")
     # 
@@ -1149,43 +1156,30 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
         raw_data.iloc[:, ind] = pd.to_numeric(raw_data.iloc[:, ind]).astype("float32")
     ## adjust the unit of the x, y position from radiam to mm
     raw_data[["intergrated x position","intergrated y position"]]=raw_data[["intergrated x position","intergrated y position"]]*track_ball_radius
-    # raw_data.loc[:, ["intergrated x position"]] = (
-    #     raw_data.loc[:, ["intergrated x position"]] * track_ball_radius
-    # )
-    # raw_data.loc[:, ["intergrated y position"]] = (
-    #     raw_data.loc[:, ["intergrated y position"]] * track_ball_radius
-    # )
     ## adjust the unit of the z vector based on the target frame rate of fictrac to get angular velocity omega
     raw_data[["delta rotation vector lab x","delta rotation vector lab y","delta rotation vector lab z"]]=raw_data[["delta rotation vector lab x","delta rotation vector lab y","delta rotation vector lab z"]]*camera_fps
-    # raw_data.loc[:, ["delta rotation vector lab x"]] = (
-    #     raw_data.loc[:, ["delta rotation vector lab x"]] * camera_fps
-    # )
-    # raw_data.loc[:, ["delta rotation vector lab y"]] = (
-    #     raw_data.loc[:, ["delta rotation vector lab y"]] * camera_fps
-    # )
-    # raw_data.loc[:, ["delta rotation vector lab z"]] = (
-    #     raw_data.loc[:, ["delta rotation vector lab z"]] * camera_fps
-    # )
-    # remove_old_fictrac_database = False
-    # if remove_old_fictrac_database & overwrite_curated_dataset:
-    #     old_database_pattern = f"database_curated*.pickle"
-    #     found_result = find_file(thisDir, old_database_pattern)
-    #     if found_result.is_file() == True:
-    #         try:
-    #             Path.unlink(found_result)
-    #         except OSError as e:
-    #             print("Error: %s - %s." % (e.filename, e.strerror))
-    #     elif isinstance(found_result, list):
-    #         for this_file in found_result:
-    #             try:
-    #                 Path.unlink(this_file)
-    #             except OSError as e:
-    #                 print("Error: %s - %s." % (e.filename, e.strerror))
+    remove_old_fictrac_database = True
+    if remove_old_fictrac_database & overwrite_curated_dataset:
+        old_database_pattern = f"database_curated*.pickle"
+        found_result = find_file(thisDir, old_database_pattern)
+        if found_result is None:
+            print("did not find any pickle curated database")
+            pass
+        elif isinstance(found_result, list):
+            for this_file in found_result:
+                try:
+                    Path.unlink(this_file)
+                except OSError as e:
+                    print("Error: %s - %s." % (e.filename, e.strerror))
+        elif found_result.is_file() == True:
+            try:
+                Path.unlink(found_result)
+            except OSError as e:
+                print("Error: %s - %s." % (e.filename, e.strerror))
+
 
     ### save the curated_database
     if analysis_methods.get("save_output") == True:
-        #database_name = f"database_{file_name}.pickle"
-        #database_directory = this_file.parent.joinpath(database_name)
         parquet_name = f"database_{file_name}.parquet.gzip"
         parquet_directory = this_file.parent.joinpath(parquet_name)
         if (overwrite_curated_dataset == False) and (
@@ -1195,13 +1189,6 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
         else:
             #raw_data.to_pickle(database_directory)
             raw_data.to_parquet(parquet_directory,compression='gzip')
-        # old_database_name = f"database_curated.pickle"
-        # old_database_dir = this_file.parent.joinpath(old_database_name)
-        # if old_database_dir.is_file() == True:
-        #     try:
-        #         Path.unlink(old_database_dir)
-        #     except OSError as e:
-        #         print("Error: %s - %s." % (e.filename, e.strerror))
     return raw_data
 
 
