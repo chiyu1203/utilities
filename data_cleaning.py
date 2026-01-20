@@ -161,7 +161,7 @@ def diskretize(
             if isinstance(x, list):
                 cumulated_dist = math.sqrt((x[j] - x[i]) ** 2 + (y[j] - y[i]) ** 2)
             else:
-                cumulated_dist=distance[i]
+                cumulated_dist=distance[j]-distance[i]
             if cumulated_dist > diskretise_length:
                 idx.append(j)
                 break
@@ -777,7 +777,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 &(stim_info["B1"] == 0)
                 &(stim_info["A1"] == 1)
                 ]
-            elif stim_info['PolarBeginDegree1'].unique().shape[0]==2:
+            elif stim_info['PolarBeginDegree1'].unique().shape[0]==2:## need to add conditions here to include ccw cw horizontal
                 stim_type = ['black_ccw','black_cw','white_ccw','white_cw','yellow_ccw','yellow_cw']
                 filters = [
                 (stim_info["R1"] == 0)
