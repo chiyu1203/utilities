@@ -361,7 +361,10 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
     stim_duration=analysis_methods.get("stim_duration")
     pre_stim_interval = analysis_methods.get("prestim_duration")
     stim_info = stim_info.reset_index()
-    first_event_time=stim_info.iloc[0,0]/camera_fps
+    if type(stim_info.iloc[0,0])==str:
+        first_event_time=stim_info.iloc[0,1]/camera_fps
+    else:
+        first_event_time=stim_info.iloc[0,0]/camera_fps
     update_pre_stim_interval=False
     if first_event_time>pre_stim_interval and update_pre_stim_interval:
         analysis_methods.update({"prestim_duration":first_event_time})
@@ -687,7 +690,40 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
         ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif 'R2' in this_column_names and visual_paradigm_name.lower()=='sweeping':
-            if stim_info['PolarBeginDegree1'].unique().shape[0]==1:
+            if stim_info['PolarBeginDegree1'].unique().shape[0]==2 or stim_info['PolarBeginR1'].unique().shape[0]==2:## need to add conditions here to include ccw cw horizontal
+                if stim_info['PolarBeginDegree1'].unique().shape[0]==2:
+                    degree1='PolarBeginDegree1'
+                    degree2='PolarEndDegree1'
+                else:
+                    degree1='PolarBeginR1'
+                    degree2='PolarEndR1'
+                stim_type = ['black_ccw','black_cw','white_ccw','white_cw','yellow_ccw','yellow_cw']
+                filters = [
+                (stim_info["R1"] == 0)
+                &(stim_info["G1"] == 0)
+                &(stim_info["B1"] == 0)
+                &(stim_info["A1"] == 1)
+                &(stim_info[degree1]>stim_info[degree2]),
+                (stim_info["R1"] == 0)
+                &(stim_info["G1"] == 0)
+                &(stim_info["B1"] == 0)
+                &(stim_info["A1"] == 1)
+                &(stim_info[degree1]<stim_info[degree2]),
+                (stim_info["R1"] == 1)
+                &(stim_info["G1"] == 1)
+                &(stim_info["B1"] == 1)
+                &(stim_info["A1"] == 1)
+                &(stim_info[degree1]>stim_info[degree2]),
+                (stim_info["R1"] == 1)
+                &(stim_info["G1"] == 1)
+                &(stim_info["B1"] == 1)
+                &(stim_info["A1"] == 1)
+                &(stim_info[degree1]<stim_info[degree2]),
+                (stim_info["R1"] == 0.8117)
+                &(stim_info[degree1]>stim_info[degree2]),
+                (stim_info["R1"] == 0.8117)
+                &(stim_info[degree1]<stim_info[degree2])]            
+            elif stim_info['PolarBeginDegree1'].unique().shape[0]==1:
                 stim_type = ['black_null','white_null','yellow_null','null_black','null_white','null_yellow','black_black','white_white','yellow_yellow','black_white','white_black','yellow_white','white_yellow','yellow_black','black_yellow']
                 filters = [
                 (stim_info["R1"] == 0)
@@ -777,33 +813,6 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 &(stim_info["B1"] == 0)
                 &(stim_info["A1"] == 1)
                 ]
-            elif stim_info['PolarBeginDegree1'].unique().shape[0]==2:## need to add conditions here to include ccw cw horizontal
-                stim_type = ['black_ccw','black_cw','white_ccw','white_cw','yellow_ccw','yellow_cw']
-                filters = [
-                (stim_info["R1"] == 0)
-                &(stim_info["G1"] == 0)
-                &(stim_info["B1"] == 0)
-                &(stim_info["A1"] == 1)
-                &(stim_info['PolarBeginDegree1']>stim_info['PolarEndDegree1']),
-                (stim_info["R1"] == 0)
-                &(stim_info["G1"] == 0)
-                &(stim_info["B1"] == 0)
-                &(stim_info["A1"] == 1)
-                &(stim_info['PolarBeginDegree1']<stim_info['PolarEndDegree1']),
-                (stim_info["R1"] == 1)
-                &(stim_info["G1"] == 1)
-                &(stim_info["B1"] == 1)
-                &(stim_info["A1"] == 1)
-                &(stim_info['PolarBeginDegree1']>stim_info['PolarEndDegree1']),
-                (stim_info["R1"] == 1)
-                &(stim_info["G1"] == 1)
-                &(stim_info["B1"] == 1)
-                &(stim_info["A1"] == 1)
-                &(stim_info['PolarBeginDegree1']<stim_info['PolarEndDegree1']),
-                (stim_info["R1"] == 0.8117)
-                &(stim_info['PolarBeginDegree1']>stim_info['PolarEndDegree1']),
-                (stim_info["R1"] == 0.8117)
-                &(stim_info['PolarBeginDegree1']<stim_info['PolarEndDegree1'])]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif 'R1' in this_column_names and visual_paradigm_name.lower()== "sweeping":
             stim_type = ['black_dir1','locust_green_dir1','locust_yellow_dir1','white_dir1','black_di2','locust_green_dir2','locust_yellow_dir2','white_dir2','green_dir1','green_dir2']#dir2 means downward; dir1 means upward
