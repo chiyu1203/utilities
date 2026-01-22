@@ -507,7 +507,6 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             stim_info=stim_info_curated    
         
         stim_info[cols_to_convert] = stim_info[cols_to_convert].astype(int)
-        duration_sorted=sorted(stim_info["Duration"].unique())
         begin_degree_sorted=sorted(stim_info["PolarBeginDegree1"].unique())
 
         if visual_paradigm_name.lower()=="choices":
@@ -579,32 +578,17 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["A2"] ==1)]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified") 
         elif visual_paradigm_name.lower() == "conflict":
-            filters_all=[]
-            stim_type_all=[]
-            for duration1 in range(len(duration_sorted)):
-                filters = [
-                (stim_info["Duration"] == duration_sorted[duration1])
-                & (stim_info["Phase1"] == 180)
-                & (stim_info["PolarEndDegree1"] < stim_info["PolarBeginDegree1"]),
-                (stim_info["Duration"] == duration_sorted[duration1])
-                & (stim_info["Phase1"] == 0)
-                & (stim_info["PolarEndDegree1"] < stim_info["PolarBeginDegree1"]),
-                (stim_info["Duration"] == duration_sorted[duration1])
-                & (stim_info["Phase1"] == 180)
-                & (stim_info["PolarEndDegree1"] > stim_info["PolarBeginDegree1"]),
-                (stim_info["Duration"] == duration_sorted[duration1])
-                & (stim_info["Phase1"] == 0)
-                & (stim_info["PolarEndDegree1"] > stim_info["PolarBeginDegree1"])]
-                stim_type=[
-                    f"cc_back_{duration_sorted[duration1]}",
-                    f"cc_front_{duration_sorted[duration1]}",
-                    f"c_back_{duration_sorted[duration1]}",
-                    f"c_front_{duration_sorted[duration1]}",
-                ]
-                filters_all.extend(filters)
-                stim_type_all.extend(stim_type)
-            stim_type=stim_type_all
-            stim_info["stim_type"] = np.select(filters_all, stim_type,default="unclassified")
+            filters = [
+            (stim_info["Phase1"] == 180)
+            & (stim_info["PolarEndDegree1"] < stim_info["PolarBeginDegree1"]),
+            (stim_info["Phase1"] == 0)
+            & (stim_info["PolarEndDegree1"] < stim_info["PolarBeginDegree1"]),
+            (stim_info["Phase1"] == 180)
+            & (stim_info["PolarEndDegree1"] > stim_info["PolarBeginDegree1"]),
+            (stim_info["Phase1"] == 0)
+            & (stim_info["PolarEndDegree1"] > stim_info["PolarBeginDegree1"])]
+            stim_type=["cc_back","cc_front","c_back","c_front"]
+            stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif visual_paradigm_name.lower() == "gratings":
             stim_info["stim_type"] = stim_info["PolarBeginDegree1"].astype(int)
         elif visual_paradigm_name.lower()=="flashing":
@@ -863,87 +847,31 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         else:
             stim_type = [
-                "receding_left_slow",
-                "receding_center_slow",
-                "receding_right_slow",
-                "receding_left_medium",
-                "receding_center_medium",
-                "receding_right_medium",
-                "receding_left_fast",
-                "receding_center_fast",
-                "receding_right_fast",
-                "looming_left_slow",
-                "looming_center_slow",
-                "looming_right_slow",
-                "looming_left_medium",
-                "looming_center_medium",
-                "looming_right_medium",
-                "looming_left_fast",
-                "looming_center_fast",
-                "looming_right_fast",
+                "receding_left",
+                "receding_center",
+                "receding_right",
+                "looming_left",
+                "looming_center",
+                "looming_right",
             ]
-
             filters = [
-            (stim_info["Duration"] == duration_sorted[2])
-            & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
+            (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
             &(stim_info["PolarEndDegree1"] == begin_degree_sorted[2]),
-            (stim_info["Duration"] == duration_sorted[2])
-            & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
+            (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
             &(stim_info["PolarEndDegree1"] == begin_degree_sorted[1]),
-            (stim_info["Duration"] == duration_sorted[2])
-            & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
+            (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
             &(stim_info["PolarEndDegree1"] == begin_degree_sorted[0]),
-            (stim_info["Duration"] == duration_sorted[1])
-            & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
+            (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
             &(stim_info["PolarEndDegree1"] == begin_degree_sorted[2]),
-            (stim_info["Duration"] == duration_sorted[1])
-            & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
+            (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
             &(stim_info["PolarEndDegree1"] == begin_degree_sorted[1]),
-            (stim_info["Duration"] == duration_sorted[1])
-            & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[0]),
-            (stim_info["Duration"] == duration_sorted[0])
-            & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[2]),
-            (stim_info["Duration"] == duration_sorted[0])
-            & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[1]),
-            (stim_info["Duration"] == duration_sorted[0])
-            & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[0]),
-            (stim_info["Duration"] == duration_sorted[2])
-            & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[2]),
-            (stim_info["Duration"] == duration_sorted[2])
-            & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[1]),
-            (stim_info["Duration"] == duration_sorted[2])
-            & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[0]),
-            (stim_info["Duration"] == duration_sorted[1])
-            & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[2]),
-            (stim_info["Duration"] == duration_sorted[1])
-            & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[1]),
-            (stim_info["Duration"] == duration_sorted[1])
-            & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[0]),
-            (stim_info["Duration"] == duration_sorted[0])
-            & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[2]),
-            (stim_info["Duration"] == duration_sorted[0])
-            & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[1]),
-            (stim_info["Duration"] == duration_sorted[0])
-            & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
-            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[0]),
-        ]
+            (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
+            &(stim_info["PolarEndDegree1"] == begin_degree_sorted[0])]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         ## update the stim_type if the locustTexture1 is 1    
         if stim_info['LocustTexture1'].max()==1 and visual_paradigm_name=="looming":
             stim_info["stim_type"][stim_info['LocustTexture1']==1]='gregarious_locust'
-        if visual_paradigm_name == "sweeping":### these additional conditions is needed because in the sweeping sequence experiment, each stimulus is 2 sec but there are multiple rounds
+        if visual_paradigm_name == "sweeping":### these additional conditions is needed in bilateral sequence assay because in the protocol, each stimulus is 2 sec but repeats multiple rounds
             if type(stim_duration)==list:
                 if len(stim_duration)==1:
                     stim_info["Duration"] = np.repeat(analysis_methods.get("stim_duration")[0], stim_info.shape[0])
@@ -1163,7 +1091,7 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
 
     for ind in range(0, raw_data.shape[1] - 1):
         raw_data.iloc[:, ind] = pd.to_numeric(raw_data.iloc[:, ind]).astype("float32")
-    ## adjust the unit of the x, y position from radiam to mm
+    ## adjust the unit of the x, y position from radiam to cm
     raw_data[["intergrated x position","intergrated y position"]]=raw_data[["intergrated x position","intergrated y position"]]*track_ball_radius
     ## adjust the unit of the z vector based on the target frame rate of fictrac to get angular velocity omega
     raw_data[["delta rotation vector lab x","delta rotation vector lab y","delta rotation vector lab z"]]=raw_data[["delta rotation vector lab x","delta rotation vector lab y","delta rotation vector lab z"]]*camera_fps
