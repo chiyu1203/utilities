@@ -681,7 +681,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 else:
                     degree1='PolarBeginR1'
                     degree2='PolarEndR1'
-                stim_type = ['black_ccw','black_cw','white_ccw','white_cw','yellow_ccw','yellow_cw']
+                stim_type = ['ccw_black','cw_black','ccw_white','cw_white','ccw_yellow','cw_yellow']
                 filters = [
                 (stim_info["R1"] == 0)
                 &(stim_info["G1"] == 0)
@@ -708,7 +708,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 (stim_info["R1"] == 0.8117)
                 &(stim_info[degree1]<stim_info[degree2])]            
             elif stim_info['PolarBeginDegree1'].unique().shape[0]==1:
-                stim_type = ['black_null','white_null','yellow_null','null_black','null_white','null_yellow','black_black','white_white','yellow_yellow','black_white','white_black','yellow_white','white_yellow','yellow_black','black_yellow']
+                stim_type = ['black_null','white_null','yellow_null','null_black','null_white','null_yellow','black_black','white_white','yellow_yellow','black_white','white_black','yellow_white','white_yellow','yellow_black','black_yellow','blue_null','null_blue']
                 filters = [
                 (stim_info["R1"] == 0)
                 &(stim_info["G1"] == 0)
@@ -795,7 +795,17 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 &(stim_info["R1"] == 0)
                 &(stim_info["G1"] == 0)
                 &(stim_info["B1"] == 0)
+                &(stim_info["A1"] == 1),
+                (stim_info["R1"] == 0)
+                &(stim_info["G1"] == 0)
+                &(stim_info["B1"] == 1)
                 &(stim_info["A1"] == 1)
+                &(stim_info["A2"] ==0),
+                (stim_info["R2"] == 0)
+                &(stim_info["G2"] == 0)
+                &(stim_info["B2"] == 1)
+                &(stim_info["A2"] == 1)
+                &(stim_info["A1"] ==0),
                 ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif 'R1' in this_column_names and visual_paradigm_name.lower()== "sweeping":
@@ -917,18 +927,30 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
         stim_info.drop(
             columns=stim_info.columns[0 : raw_column_number + 1], inplace=True
         )
-        if visual_paradigm_name.endswith("sities"):
-            stim_variable_direction = (
-                stim_info["VelX"] * stim_info["numDots"] / abs(stim_info["VelY"])+abs(stim_info["VelX"])
-            )
+        if visual_paradigm_name.endswith("sities") or visual_paradigm_name=="density":
+            if stim_info["VelX"].unique()[0]==0:
+                stim_variable_with_direction = (
+                    stim_info["VelY"] * stim_info["numDots"] / abs(stim_info["VelY"])
+                )
+            elif stim_info["VelY"].unique()[0]==0:
+                stim_variable_with_direction = (
+                    stim_info["VelX"] * stim_info["numDots"] / abs(stim_info["VelX"])
+                )
         elif visual_paradigm_name.lower() == "coherence":
-            stim_variable_direction = (
+            stim_variable_with_direction = (
                 (stim_info["VelY"]+stim_info["VelX"]) * stim_info["Coherence"] / (abs(stim_info["VelY"])+abs(stim_info["VelX"]))
-            )## add the plus here because when inserting the probe from anterior side, the dots move along the y axis
-        # positive value means dots moves from right to left in a window, allocentric orientation in a panoramic setup: counterclock wise
-        # if np.isnan(stim_variable_direction).any():
-        #     stim_variable_direction=stim_variable_direction.fillna(0)
-        stim_info["stim_type"] = -1 * stim_variable_direction.astype(int)
+            )## needs to calculate the direction in this way is because due to some random setup, I made VelY to be the velocity during inter-stimulus interval (VelX to be 0). Vice versa for stimulus presentation.
+            ## hence, there is no unique stim_info["VelX"].unique()[0]==0 in this protocol.
+        
+        # if np.isnan(stim_variable_with_direction).any():
+        #     stim_variable_with_direction=stim_variable_with_direction.fillna(0)
+        if exp_place.lower() == "vccball":
+            stim_info["stim_type"] = -1* stim_variable_with_direction.astype(int)
+        else:
+            stim_info["stim_type"] = stim_variable_with_direction.astype(int)
+            # needs to add multiple by -1 because in VCC balls positive value means dots moves from right to left in a window (or counterclock-wise from the top-down view)
+            # this is opposite from the parameters at zball. This is because the display environment (ViewWindow nodes were set differently)
+            ## from now on, positive value means horizontal degree increment, a clockwise motion in panoroma setup
     stim_type = np.sort(stim_info.stim_type.unique()).tolist()
     return stim_info, stim_type
 
@@ -1097,8 +1119,9 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
     raw_data[["delta rotation vector lab x","delta rotation vector lab y","delta rotation vector lab z"]]=raw_data[["delta rotation vector lab x","delta rotation vector lab y","delta rotation vector lab z"]]*camera_fps
     remove_old_fictrac_database = True
     if remove_old_fictrac_database & overwrite_curated_dataset:
-        old_database_pattern = f"database_curated*.pickle"
-        found_result = find_file(thisDir, old_database_pattern)
+        old_database_pattern = f"database_*.pickle"
+        old_database_pattern2 = f"database_*.parquet.gzip"
+        found_result = find_file(thisDir, old_database_pattern,old_database_pattern2)
         if found_result is None:
             print("did not find any pickle curated database")
             pass
@@ -1113,6 +1136,7 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
                 Path.unlink(found_result)
             except OSError as e:
                 print("Error: %s - %s." % (e.filename, e.strerror))
+            
 
 
     ### save the curated_database
