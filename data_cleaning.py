@@ -590,7 +590,32 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             stim_type=["cc_back","cc_front","c_back","c_front"]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif visual_paradigm_name.lower() == "gratings":
-            stim_info["stim_type"] = stim_info["PolarBeginDegree1"].astype(int)
+            stim_info['TranslationalGain'] = stim_info['TranslationalGain'].astype(int)
+            stim_info['TranslationalGain'] = stim_info['TranslationalGain'].astype(str)
+            stim_info['PolarBeginDegree1'] = stim_info['PolarBeginDegree1'].astype(str)
+            stim_info['stim_type'] ='degree'+stim_info['PolarBeginDegree1'].str.strip() + '_tf' + stim_info['TranslationalGain'].str.strip()
+            # temporal_frequency_sorted=sorted(stim_info['TranslationalGain'].unique())
+            # filters_all=[]
+            # stim_type_all=[]
+            # for this_tf in temporal_frequency_sorted:
+            #     filters = [
+            #     (stim_info['TranslationalGain'] == this_tf)
+            #     & (stim_info['PolarBeginDegree1']==0),
+            #     (stim_info['TranslationalGain'] == this_tf)
+            #     & (stim_info['PolarBeginDegree1']==90),
+            #     (stim_info['TranslationalGain'] == this_tf)
+            #     & (stim_info['PolarBeginDegree1']==180),
+            #     (stim_info['TranslationalGain'] == this_tf)
+            #     & (stim_info['PolarBeginDegree1']==270)]
+            #     stim_type=[
+            #         f"deg0_tf{this_tf}",
+            #         f"deg90_tf{this_tf}",
+            #         f"deg180_tf{this_tf}",
+            #         f"deg270_tf{this_tf}",
+            #     ]
+            #     filters_all.extend(filters)
+            #     stim_type_all.extend(stim_type)
+            # stim_info["stim_type"] = np.select(filters_all, stim_type_all,default="unclassified")
         elif visual_paradigm_name.lower()=="flashing":
             stim_type = ['black','blue','locust_yellow','white','green','locust_green']
             filters = [
@@ -681,7 +706,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 else:
                     degree1='PolarBeginR1'
                     degree2='PolarEndR1'
-                stim_type = ['ccw_black','cw_black','ccw_white','cw_white','ccw_yellow','cw_yellow']
+                stim_type = ['ccw_black','cw_black','ccw_white','cw_white','ccw_yellow','cw_yellow','ccw_black2','cw_black2','ccw_black4','cw_black4']
                 filters = [
                 (stim_info["R1"] == 0)
                 &(stim_info["G1"] == 0)
@@ -706,7 +731,27 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 (stim_info["R1"] == 0.8117)
                 &(stim_info[degree1]>stim_info[degree2]),
                 (stim_info["R1"] == 0.8117)
-                &(stim_info[degree1]<stim_info[degree2])]            
+                &(stim_info[degree1]<stim_info[degree2]),
+                (stim_info["R1"] == 0)
+                &(stim_info["G1"] == 0)
+                &(stim_info["B1"] == 0)
+                &(stim_info["A1"] == 2)
+                &(stim_info[degree1]>stim_info[degree2]),
+                (stim_info["R1"] == 0)
+                &(stim_info["G1"] == 0)
+                &(stim_info["B1"] == 0)
+                &(stim_info["A1"] == 2)
+                &(stim_info[degree1]<stim_info[degree2]),
+                (stim_info["R1"] == 0)
+                &(stim_info["G1"] == 0)
+                &(stim_info["B1"] == 0)
+                &(stim_info["A1"] == 4)
+                &(stim_info[degree1]>stim_info[degree2]),
+                (stim_info["R1"] == 0)
+                &(stim_info["G1"] == 0)
+                &(stim_info["B1"] == 0)
+                &(stim_info["A1"] == 4)
+                &(stim_info[degree1]<stim_info[degree2])]
             elif stim_info['PolarBeginDegree1'].unique().shape[0]==1:
                 stim_type = ['black_null','white_null','yellow_null','null_black','null_white','null_yellow','black_black','white_white','yellow_yellow','black_white','white_black','yellow_white','white_yellow','yellow_black','black_yellow','blue_null','null_blue']
                 filters = [
