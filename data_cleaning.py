@@ -4,38 +4,10 @@ import os, math, re, csv, json, sys
 import time
 from math import atan2
 import matplotlib.pyplot as plt
-# import chardet
 from pathlib import Path
 from useful_tools import find_file
 from scipy.interpolate import interp1d
-# def ListAngles(X,Y):
-#     ang = [] 
-#     for i in range(len(X)-1):
-#         changeInX = X[i+1] - X[i]
-#         changeInY = Y[i+1] - Y[i]
-        
-#         a = atan2(changeInY,changeInX)
-#         if a < 0:
-#             a = a + 2*np.pi
-#         ang.append(a)
-        
-#     return ang
 
-# def calc_eucledian(xx1,yy1):
-#     w=0
-#     dist = []
-#     while w < len(xx1)-1:
-        
-
-#         a = np.array((xx1[w+1],yy1[w+1]))
-#         b = np.array((xx1[w],yy1[w]))        
-
-#         euc = np.linalg.norm(a - b)
-#         #euc = distance.euclidean(b,a)
-#         dist.append(euc)
-#         w = w + 1
-
-#     return dist
 def remove_false_detection_heading(df, angle_col='heading_direction', threshold_upper=None, threshold_lower=None, threshold_range=None):
 ### written by Aljoscha Markus 27/06/2025
     y = df[angle_col].values
@@ -510,7 +482,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
         begin_degree_sorted=sorted(stim_info["PolarBeginDegree1"].unique())
 
         if visual_paradigm_name.lower()=="choices":
-            stim_type=['glocust_null','null_glocust','glocust_black','black_glocust','glocust_glocust','black_null','null_black','black_black']
+            stim_type=['glocust_null','null_glocust','glocust_black','black_glocust','glocust_glocust','black_null','null_black','black_black','yellow_null','null_yellow']
             filters=[
             (stim_info["LocustTexture1"]==1)       
             &(stim_info["R1"] == 0)
@@ -575,7 +547,22 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["R2"] == 0)
             &(stim_info["G2"] == 0)
             &(stim_info["B2"] == 0)
-            &(stim_info["A2"] ==1)]
+            &(stim_info["A2"] ==1),
+            (stim_info["LocustTexture1"]==0)       
+            &(stim_info["R1"] == 0.8117)
+            &(stim_info["A1"] == 1)
+            &(stim_info["A2"] ==0),
+            (stim_info["LocustTexture2"]==0)       
+            &(stim_info["R2"] == 0.8117)
+            &(stim_info["A2"] == 1)
+            &(stim_info["A1"] ==0),
+            (stim_info["LocustTexture1"]==0)       
+            &(stim_info["R1"] == 0.8117)
+            &(stim_info["A1"] == 1)
+            &(stim_info["LocustTexture2"]==0)       
+            &(stim_info["R2"] == 0.8117)
+            &(stim_info["A2"] ==1)
+            ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified") 
         elif visual_paradigm_name.lower() == "conflict":
             filters = [
@@ -594,28 +581,6 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             stim_info['TranslationalGain'] = stim_info['TranslationalGain'].astype(str)
             stim_info['PolarBeginDegree1'] = stim_info['PolarBeginDegree1'].astype(str)
             stim_info['stim_type'] ='degree'+stim_info['PolarBeginDegree1'].str.strip() + '_tf' + stim_info['TranslationalGain'].str.strip()
-            # temporal_frequency_sorted=sorted(stim_info['TranslationalGain'].unique())
-            # filters_all=[]
-            # stim_type_all=[]
-            # for this_tf in temporal_frequency_sorted:
-            #     filters = [
-            #     (stim_info['TranslationalGain'] == this_tf)
-            #     & (stim_info['PolarBeginDegree1']==0),
-            #     (stim_info['TranslationalGain'] == this_tf)
-            #     & (stim_info['PolarBeginDegree1']==90),
-            #     (stim_info['TranslationalGain'] == this_tf)
-            #     & (stim_info['PolarBeginDegree1']==180),
-            #     (stim_info['TranslationalGain'] == this_tf)
-            #     & (stim_info['PolarBeginDegree1']==270)]
-            #     stim_type=[
-            #         f"deg0_tf{this_tf}",
-            #         f"deg90_tf{this_tf}",
-            #         f"deg180_tf{this_tf}",
-            #         f"deg270_tf{this_tf}",
-            #     ]
-            #     filters_all.extend(filters)
-            #     stim_type_all.extend(stim_type)
-            # stim_info["stim_type"] = np.select(filters_all, stim_type_all,default="unclassified")
         elif visual_paradigm_name.lower()=="flashing":
             stim_type = ['black','blue','locust_yellow','white','green','locust_green']
             filters = [
@@ -987,8 +952,6 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             )## needs to calculate the direction in this way is because due to some random setup, I made VelY to be the velocity during inter-stimulus interval (VelX to be 0). Vice versa for stimulus presentation.
             ## hence, there is no unique stim_info["VelX"].unique()[0]==0 in this protocol.
         
-        # if np.isnan(stim_variable_with_direction).any():
-        #     stim_variable_with_direction=stim_variable_with_direction.fillna(0)
         if exp_place.lower() == "vccball":
             stim_info["stim_type"] = -1* stim_variable_with_direction.astype(int)
         else:
@@ -1031,14 +994,9 @@ def generate_timestamp_csv(file_path):
             r"[()]", "", regex=True
         )
         tracking_info["Value"] = pd.to_numeric(tracking_info["Value"])
-        # frame_number = tracking_info["Value"].drop_duplicates()
-        # fill_element = np.ones(frame_number.values[0])
         float_values = tracking_info["Timestamp"][
             tracking_info["Value"].drop_duplicates().index
         ].values
-        # print(tracking_info)
-        # with open(file_path, "r") as log_file:
-        #     log_content = log_file.read()
 
     if save_csv == True:
         # Combine the data into a 2D array
@@ -1069,24 +1027,11 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
     camera_fps = analysis_methods.get("camera_fps")
     fictrac_posthoc_analysis = analysis_methods.get("fictrac_posthoc_analysis")
     overwrite_curated_dataset = analysis_methods.get("overwrite_curated_dataset")
-    # laod file
+    # load file
     file_name = Path(this_file).stem
     thisDir=Path(this_file).parent
     experiment_timestamp = file_name.split("-")
     raw_data = pd.read_table(this_file, sep="\s+")
-    # 
-    # column7=raw_data.iloc[:,7].astype(float)
-    # column6=raw_data.iloc[:,6].astype(float)
-    # column5=raw_data.iloc[:,5].astype(float)
-    # print(np.sum(abs(column5.values)),np.sum(abs(column6.values)),np.sum(abs(column7.values)))
-    # fig1, (ax, ax1,ax2) = plt.subplots(
-    #     nrows=3, ncols=1, figsize=(18, 7), tight_layout=True
-    # )
-    # ax.plot(column5.values)
-    # ax1.plot(column6.values)
-    # ax2.plot(column7.values)
-    # plt.show()
-    # fig1.savefig(f"{this_file}_raw_fictrac_check.png")
     """
     fictrac title is here 'frame counter', 'delta rotation vector cam x', 'delta rotation vector cam y', \
     'delta rotation vector cam z', 'delta rotation error score', 'delta rotation vector lab x', \
