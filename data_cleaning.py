@@ -327,7 +327,8 @@ def load_temperature_data(txt_path):
 
 
 def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
-    #error related to cannot reshape array of size 1624 into shape (57,newaxis) is usually because the log bug in trial info
+    #error related to cannot reshape array of size 1624 into shape (57,newaxis) is usually because the temperature is logged in the next row in the trial file
+    #errpr related ValueError: Unable to parse string " " at position 0 is usually because the temperature is not logged in the current row in the trial file
     visual_paradigm_name = analysis_methods.get("experiment_name")
     exp_place = analysis_methods.get("exp_place")
     camera_fps=analysis_methods.get("camera_fps")
@@ -483,7 +484,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
         begin_degree_sorted=sorted(stim_info["PolarBeginDegree1"].unique())
 
         if visual_paradigm_name.lower()=="choices":
-            stim_type=['glocust_null','null_glocust','glocust_black','black_glocust','glocust_glocust','black_null','null_black','black_black','yellow_null','null_yellow','yellow_yellow']
+            stim_type=['glocust_null','null_glocust','glocust_black','black_glocust','glocust_glocust','black_null','null_black','black_black','yellow_null','null_yellow','yellow_yellow','yellow_black','black_yellow','yellow_glocust','glocust_yellow']
             filters=[
             (stim_info["LocustTexture1"]==1)       
             &(stim_info["R1"] == 0)
@@ -550,15 +551,41 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["B2"] == 0)
             &(stim_info["A2"] ==1),
             (stim_info["LocustTexture1"]==0)       
+            &(stim_info["A2"] == 0)
+            &(stim_info["LocustTexture2"]==0)       
             &(stim_info["R1"] == 0.8117)
-            &(stim_info["A1"] == 1)
-            &(stim_info["A2"] ==0),
-            (stim_info["LocustTexture2"]==0)       
+            &(stim_info["A1"] ==1),
+            (stim_info["LocustTexture1"]==0)       
+            &(stim_info["A1"] == 0)
+            &(stim_info["LocustTexture2"]==0)       
             &(stim_info["R2"] == 0.8117)
-            &(stim_info["A2"] == 1)
-            &(stim_info["A1"] ==0),
+            &(stim_info["A2"] ==1),
             (stim_info["LocustTexture1"]==0)       
             &(stim_info["R1"] == 0.8117)
+            &(stim_info["A1"] == 1)
+            &(stim_info["LocustTexture2"]==0)       
+            &(stim_info["R2"] == 0.8117)
+            &(stim_info["A2"] ==1),
+            (stim_info["LocustTexture1"]==0)
+            &(stim_info["R2"] == 0)     
+            &(stim_info["A2"] == 1)
+            &(stim_info["LocustTexture2"]==0)       
+            &(stim_info["R1"] == 0.8117)
+            &(stim_info["A1"] ==1),
+            (stim_info["LocustTexture1"]==0)
+            &(stim_info["R1"] == 0)     
+            &(stim_info["A1"] == 1)
+            &(stim_info["LocustTexture2"]==0)       
+            &(stim_info["R2"] == 0.8117)
+            &(stim_info["A2"] ==1),
+            (stim_info["LocustTexture2"]==1) 
+            &(stim_info["R2"] == 0)     
+            &(stim_info["A2"] == 1)
+            &(stim_info["LocustTexture1"]==0)      
+            &(stim_info["R1"] == 0.8117)
+            &(stim_info["A1"] ==1),
+            (stim_info["LocustTexture1"]==1)
+            &(stim_info["R1"] == 0)     
             &(stim_info["A1"] == 1)
             &(stim_info["LocustTexture2"]==0)       
             &(stim_info["R2"] == 0.8117)
