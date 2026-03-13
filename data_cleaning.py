@@ -483,7 +483,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
         stim_info[cols_to_convert] = stim_info[cols_to_convert].astype(int)
         begin_degree_sorted=sorted(stim_info["PolarBeginDegree1"].unique())
 
-        if visual_paradigm_name.lower()=="choices":
+        if visual_paradigm_name.lower()=="choices":# Note in the Choice assay, Object1 are usually set in the right monitor; Object2 are usually set in the left monitor. This is opposite from the sweeping assay
             stim_type=['glocust_null','null_glocust','glocust_black','black_glocust','glocust_glocust','black_null','null_black','black_black','yellow_null','null_yellow','yellow_yellow','yellow_black','black_yellow','yellow_glocust','glocust_yellow']
             filters=[
             (stim_info["LocustTexture1"]==1)       
@@ -745,7 +745,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 &(stim_info["B1"] == 0)
                 &(stim_info["A1"] == 4)
                 &(stim_info[degree1]<stim_info[degree2])]
-            elif stim_info['PolarBeginDegree1'].unique().shape[0]==1:
+            elif stim_info['PolarBeginDegree1'].unique().shape[0]==1:###RGBA1 means the object on the left monitor going cw,###RGBA2 means the object on the right monitor going ccw
                 stim_type = ['black_null','white_null','yellow_null','null_black','null_white','null_yellow','black_black','white_white','yellow_yellow','black_white','white_black','yellow_white','white_yellow','yellow_black','black_yellow','blue_null','null_blue']
                 filters = [
                 (stim_info["R1"] == 0)
