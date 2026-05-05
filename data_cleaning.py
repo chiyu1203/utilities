@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from useful_tools import find_file
 from scipy.interpolate import interp1d
-
+from importlib.metadata import version
 def remove_false_detection_heading(df, angle_col='heading_direction', threshold_upper=None, threshold_lower=None, threshold_range=None):
 ### written by Aljoscha Markus 27/06/2025
     y = df[angle_col].values
@@ -334,8 +334,9 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
     camera_fps=analysis_methods.get("camera_fps")
     stim_duration=analysis_methods.get("stim_duration")
     pre_stim_interval = analysis_methods.get("prestim_duration")
+    fictrac_posthoc_analysis = analysis_methods.get("fictrac_posthoc_analysis")
     stim_info = stim_info.reset_index()
-    if type(stim_info.iloc[0,0])==str:
+    if type(stim_info.iloc[0,0])==str:### this still has bug because in the session Y:\GN26041\260411\looming\session1\2026-04-11_17-22-53, first frame time is 89.14 sec based on stim_info.iloc[0,0] but it will be 62 sec based on stim_info.iloc[0,1]
         first_event_time=stim_info.iloc[0,1]/camera_fps
     else:
         first_event_time=stim_info.iloc[0,0]/camera_fps
@@ -459,26 +460,41 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 stim_variable.append(float(timestamp.replace(")", "")))
 
         stim_variable = np.array(stim_variable).reshape((len(stim_info), -1))
-        if visual_paradigm_name.lower() == "choices":
-            default_column_names = ["LocationBeginX1","LocationEndX1","LocationBeginZ1","LocationEndZ1","PolarBeginR1","PolarEndR1","PolarBeginDegree1","PolarEndDegree1","Phase1","PreMovDuration","Duration","PostMovDuration","ISI","LocustObj1","LocustObj2","HeadingAt0degree1","HeadingAt0degree2","LocustTexture1","LocustTexture2","TranslationalGain","RotationalGain","R1","G1","B1","A1","R2","G2","B2","A2"] 
-            cols_to_convert = ["LocustTexture1","LocustTexture2","HeadingAt0degree1","HeadingAt0degree2","LocustObj1","LocustObj2","PolarBeginDegree1","PolarEndDegree1","Phase1","Duration","TranslationalGain","RotationalGain"]
-        else:
-            default_column_names = ["LocationBeginX1","LocationEndX1","LocationBeginZ1","LocationEndZ1","PolarBeginR1","PolarEndR1","PolarBeginDegree1","PolarEndDegree1","Phase1","PreMovDuration","Duration","PostMovDuration","ISI","LocustObj1","ReverseZ1","LocustTexture1","TranslationalGain","RotationalGain","R1","G1","B1","A1","R2","G2","B2","A2"]
+        if visual_paradigm_name.lower() == "looming" and fictrac_posthoc_analysis==False:
+            stim_info['A1'] = [1 if x == 0 else 0 for x in stim_info['level_3']]
+            stim_info['LocustTexture1'] = [1 if x == 0 else 0 for x in stim_info['level_3']]
+            stim_info['PolarEndR1'] = [3.5 if x >= 0 else 35.5 for x in stim_info['level_3']]
+            stim_info["temperature"] = stim_info["Timestamp"].astype("float32")
+            stim_info["humidity"] = stim_info["Value"].astype("float32")
+            stim_info["ts"]=stim_info['Frame']
+            default_stim_info=dict(LocationBeginX1=0,LocationEndX1=0,LocationBeginZ1=0,LocationEndZ1=0,PolarBeginR1=19.5,PolarBeginDegree1=0,PolarEndDegree1=0,Phase1=0,PreMovDuration=0.5,
+                                   Duration=4,PostMovDuration=0.5,ISI=-1,LocustObj1=1,ReverseZ1=1,TranslationalGain=1,RotationalGain=1,R1=0,G1=0,B1=0)
+            df = pd.DataFrame(default_stim_info, index=[0])
+            tmp=df.loc[df.index.repeat(len(stim_info))].reset_index(drop=True)
+            stim_info = pd.concat([stim_info.iloc[:,-5:], tmp], axis=1)
+            this_column_names=stim_info.columns
             cols_to_convert = ["LocustTexture1","ReverseZ1","LocustObj1","PolarBeginDegree1","PolarEndDegree1","Phase1","Duration"]
-        if stim_info['Timestamp'].dtypes=='float64':
-            this_column_names=default_column_names[:stim_variable.shape[1]]
-            stim_info_curated = pd.DataFrame(stim_variable, columns=this_column_names)
-            stim_info["ts"]=stim_info['Timestamp']
-            stim_info['temperature']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[0])## when there is a bug saying things can not be sliced, that usually means temperature is not logged in some particular column
-            stim_info['humidity']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[1])
-            stim_info["temperature"] = stim_info["temperature"].astype("float32")
-            stim_info["humidity"] = stim_info["humidity"].astype("float32")
-            stim_info=pd.concat((stim_info_curated,stim_info.iloc[:,-3:]),axis=1)
         else:
-            this_column_names=default_column_names[:stim_variable.shape[1]-1]
-            this_column_names.append("ts")
-            stim_info_curated = pd.DataFrame(stim_variable, columns=this_column_names)
-            stim_info=stim_info_curated    
+            if visual_paradigm_name.lower() == "choices":
+                default_column_names = ["LocationBeginX1","LocationEndX1","LocationBeginZ1","LocationEndZ1","PolarBeginR1","PolarEndR1","PolarBeginDegree1","PolarEndDegree1","Phase1","PreMovDuration","Duration","PostMovDuration","ISI","LocustObj1","LocustObj2","HeadingAt0degree1","HeadingAt0degree2","LocustTexture1","LocustTexture2","TranslationalGain","RotationalGain","R1","G1","B1","A1","R2","G2","B2","A2"] 
+                cols_to_convert = ["LocustTexture1","LocustTexture2","HeadingAt0degree1","HeadingAt0degree2","LocustObj1","LocustObj2","PolarBeginDegree1","PolarEndDegree1","Phase1","Duration","TranslationalGain","RotationalGain"]
+            else:
+                default_column_names = ["LocationBeginX1","LocationEndX1","LocationBeginZ1","LocationEndZ1","PolarBeginR1","PolarEndR1","PolarBeginDegree1","PolarEndDegree1","Phase1","PreMovDuration","Duration","PostMovDuration","ISI","LocustObj1","ReverseZ1","LocustTexture1","TranslationalGain","RotationalGain","R1","G1","B1","A1","R2","G2","B2","A2"]
+                cols_to_convert = ["LocustTexture1","ReverseZ1","LocustObj1","PolarBeginDegree1","PolarEndDegree1","Phase1","Duration"]
+            if stim_info['Timestamp'].dtypes=='float64':
+                this_column_names=default_column_names[:stim_variable.shape[1]]
+                stim_info_curated = pd.DataFrame(stim_variable, columns=this_column_names)
+                stim_info["ts"]=stim_info['Timestamp']
+                stim_info['temperature']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[0])## when there is a bug saying things can not be sliced, that usually means temperature is not logged in some particular column
+                stim_info['humidity']=pd.to_numeric(stim_info["Value"].str.replace(r"[()]", "", regex=True).str.split(";",expand=True)[1])
+                stim_info["temperature"] = stim_info["temperature"].astype("float32")
+                stim_info["humidity"] = stim_info["humidity"].astype("float32")
+                stim_info=pd.concat((stim_info_curated,stim_info.iloc[:,-3:]),axis=1)
+            else:
+                this_column_names=default_column_names[:stim_variable.shape[1]-1]
+                this_column_names.append("ts")
+                stim_info_curated = pd.DataFrame(stim_variable, columns=this_column_names)
+                stim_info=stim_info_curated    
         
         stim_info[cols_to_convert] = stim_info[cols_to_convert].astype(int)
         begin_degree_sorted=sorted(stim_info["PolarBeginDegree1"].unique())
@@ -918,7 +934,9 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         ## update the stim_type if the locustTexture1 is 1    
         if stim_info['LocustTexture1'].max()==1 and visual_paradigm_name=="looming":
-            stim_info["stim_type"][stim_info['LocustTexture1']==1]='gregarious_locust'
+            stim_info.loc[stim_info['LocustTexture1']==1,"stim_type"]='gregarious_locust'
+            if fictrac_posthoc_analysis==False:
+                stim_info.loc[stim_info['A1']==0,"stim_type"]='null'
         if visual_paradigm_name == "sweeping":### these additional conditions is needed in bilateral sequence assay because in the protocol, each stimulus is 2 sec but repeats multiple rounds
             if type(stim_duration)==list:
                 if len(stim_duration)==1:
@@ -1059,7 +1077,10 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
     file_name = Path(this_file).stem
     thisDir=Path(this_file).parent
     experiment_timestamp = file_name.split("-")
-    raw_data = pd.read_table(this_file, sep="\s+")
+    if version('pandas')<'2.3':
+        raw_data = pd.read_table(this_file, sep='\s+')
+    else:
+        raw_data = pd.read_table(this_file)
     """
     fictrac title is here 'frame counter', 'delta rotation vector cam x', 'delta rotation vector cam y', \
     'delta rotation vector cam z', 'delta rotation error score', 'delta rotation vector lab x', \
