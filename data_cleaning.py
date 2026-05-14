@@ -373,7 +373,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             stim_variable.append(int(stim_info.iloc[row, 4].split("=", 1)[1]))
             stim_variable.append(int(stim_info.iloc[row, 5].split("=", 1)[1]))
             stim_variable.append(int(stim_info.iloc[row, 6].split("=", 1)[1]))
-            if exp_date in ["221102", "221103"]:
+            if exp_date in ['2023-08-30', '2023-08-31','2022-11-03','2022-11-02']:
                 stim_variable.append(int(stim_info.iloc[row, 7].split("=", 1)[1]))
                 stim_variable.append(int(stim_info.iloc[row, 8].split("=", 1)[1]))
             # stim_variable.append(int(re.split(r'=|}',stim_info.iloc[row,5])[1]))
@@ -394,11 +394,11 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             "location1_end",
             "location2_start",
             "location2_end",
-            "time",
-            "timestamp",
+            "Duration",
+            "ts",
         ]
         stim_info = pd.DataFrame(stim_variable, columns=column_names)
-        if exp_date in ["2022-10-15", "2022-10-16"]:
+        if exp_date in ["2022-10-15", "2022-10-16"]:### note duration is not log in, probably fixed at 1 sec in '221015','221016'
             ### use this criteria for experiments during exp_date=['221015','221016']
             filters = [
                 (stim_info.iloc[:, 0] == 1)
@@ -430,7 +430,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 (stim_info.iloc[:, 6] == 2)
                 & (stim_info.iloc[:, 2] == stim_info.iloc[:, 3]),
             ]
-        stim_info["stim_type"] = np.select(filters, stim_type)
+        stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
     elif visual_paradigm_name.lower() in ["conflict","looming","receding","gratings","sweeping","flashing","choices"]:
         stim_variable = []
         stimulus_timestamp = []
@@ -461,8 +461,8 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
 
         stim_variable = np.array(stim_variable).reshape((len(stim_info), -1))
         if visual_paradigm_name.lower() == "looming" and fictrac_posthoc_analysis==False:
-            stim_info['A1'] = [1 if x == 0 else 0 for x in stim_info['level_3']]
-            stim_info['LocustTexture1'] = [1 if x == 0 else 0 for x in stim_info['level_3']]
+            stim_info['A1'] = [1 if x < 1 else 0 for x in stim_info['level_3']]
+            stim_info['LocustTexture1'] = [1 if x < 1 else 0 for x in stim_info['level_3']]
             stim_info['PolarEndR1'] = [3.5 if x >= 0 else 35.5 for x in stim_info['level_3']]
             stim_info["temperature"] = stim_info["Timestamp"].astype("float32")
             stim_info["humidity"] = stim_info["Value"].astype("float32")
@@ -471,7 +471,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                                    Duration=4,PostMovDuration=0.5,ISI=-1,LocustObj1=1,ReverseZ1=1,TranslationalGain=1,RotationalGain=1,R1=0,G1=0,B1=0)
             df = pd.DataFrame(default_stim_info, index=[0])
             tmp=df.loc[df.index.repeat(len(stim_info))].reset_index(drop=True)
-            stim_info = pd.concat([stim_info.iloc[:,-5:], tmp], axis=1)
+            stim_info = pd.concat([stim_info.iloc[:,-6:], tmp], axis=1)
             this_column_names=stim_info.columns
             cols_to_convert = ["LocustTexture1","ReverseZ1","LocustObj1","PolarBeginDegree1","PolarEndDegree1","Phase1","Duration"]
         else:
@@ -666,7 +666,8 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             (stim_info["R1"] == 0)
             &(stim_info["G1"] == 0)
             &(stim_info["B1"] == 0)
-            &(stim_info["A1"] == 0),
+            &(stim_info["A1"] == 0)
+            &(stim_info["PolarBeginR1"] > stim_info["PolarEndR1"]),
             (stim_info["R1"] == 0)
             &(stim_info["G1"] == 0)
             &(stim_info["B1"] == 0)
@@ -690,12 +691,14 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             (stim_info["R1"] == 0)
             &(stim_info["G1"] == 0)
             &(stim_info["B1"] == 1)
-            &(stim_info["A1"] == 0),
+            &(stim_info["A1"] == 0)
+            &(stim_info["PolarBeginR1"] > stim_info["PolarEndR1"]),
             (stim_info["R1"] == 0.8117)
             &(stim_info["A1"] == 1)
             &(stim_info["PolarBeginR1"] < stim_info["PolarEndR1"]),
             (stim_info["R1"] == 0.8117)
-            &(stim_info["A1"] == 0),              
+            &(stim_info["A1"] == 0)
+            &(stim_info["PolarBeginR1"] > stim_info["PolarEndR1"]),
             (stim_info["R1"] == 1)
             &(stim_info["G1"] == 1)
             &(stim_info["B1"] == 1)
@@ -705,6 +708,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["G1"] == 1)
             &(stim_info["B1"] == 1)
             &(stim_info["A1"] == 0)
+            &(stim_info["PolarBeginR1"] > stim_info["PolarEndR1"])
         ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         elif 'R2' in this_column_names and visual_paradigm_name.lower()=='sweeping':
@@ -934,9 +938,10 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
         ## update the stim_type if the locustTexture1 is 1    
         if stim_info['LocustTexture1'].max()==1 and visual_paradigm_name=="looming":
-            stim_info.loc[stim_info['LocustTexture1']==1,"stim_type"]='gregarious_locust'
+            stim_info.loc[(stim_info['LocustTexture1']==1) & (stim_info["PolarBeginR1"] > stim_info["PolarEndR1"]),"stim_type"]='gregarious_looming'
+            stim_info.loc[(stim_info['LocustTexture1']==1) & (stim_info["PolarBeginR1"] < stim_info["PolarEndR1"]),"stim_type"]='gregarious_receding'
             if fictrac_posthoc_analysis==False:
-                stim_info.loc[stim_info['A1']==0,"stim_type"]='null'
+                stim_info.loc[stim_info['A1']==0,"stim_type"]='omit'
         if visual_paradigm_name == "sweeping":### these additional conditions is needed in bilateral sequence assay because in the protocol, each stimulus is 2 sec but repeats multiple rounds
             if type(stim_duration)==list:
                 if len(stim_duration)==1:
@@ -1239,10 +1244,10 @@ if __name__ == "__main__":
     #thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24036\240801\coherence\session1"
     #thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25102\250929\coherence\session1"
     #thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25101\250917\looming\session1"
-    thisDir = r"Y:\GN25051\251101\sweeping\session1"
+    thisDir = r"Z:\DATA\experiment_trackball_Optomotor\VCCball\L22144\221103\sweeploom"
     #thisDir = r"C:\Users\neuroLaptop\Documents\GN25006\250312\receding\session1"
     # thisDir = r"C:\Users\neuroLaptop\Documents\GN25040\250106\speed\session1"
-    json_file = r"..\ephys\analysis_methods_dictionary.json"
+    json_file = r"..\bonfic\analysis_methods_dictionary.json"
     tic = time.perf_counter()
     # old_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\lux4_2024-12-09T12_02_03.csv"
     # new_csv_path = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24124\241209\coherence\session1\camera4_2024-12-09T12_02_03.csv"
