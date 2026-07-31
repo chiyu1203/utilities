@@ -431,7 +431,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 & (stim_info.iloc[:, 2] == stim_info.iloc[:, 3]),
             ]
         stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
-    elif visual_paradigm_name.lower() in ["conflict","looming","receding","gratings","sweeping","flashing","choices"]:
+    elif visual_paradigm_name.lower() in ["conflict","looming","receding","gratings","sweeping","flashing","choices","combo"]:
         stim_variable = []
         stimulus_timestamp = []
         num_trial_col=np.shape(stim_info)[1] - 2
@@ -634,7 +634,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             (stim_info["R1"] == 0)
             &(stim_info["G1"] == 0)
             &(stim_info["B1"] == 1),
-            (stim_info["R1"] == 0.8117)
+            (stim_info["R1"] == 0.8117),
             (stim_info["R1"] == 1)
             &(stim_info["G1"] == 1)
             &(stim_info["B1"] == 1),
@@ -913,6 +913,45 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
             &(stim_info["PolarBeginDegree1"] < stim_info["PolarEndDegree1"]),
         ]
             stim_info["stim_type"] = np.select(filters, stim_type,default="unclassified")
+        elif visual_paradigm_name.lower()== "combo":
+            num_colour_trial=200
+            stim_info["stim_type"] = ['combo_colour']*num_colour_trial + ['combo_size']*(stim_info.shape[0]-num_colour_trial)
+        #     stim_colour=stim_info.iloc[:num_colour_trial]
+        #     stim_type = ['black','blue','locust_yellow','white','green','locust_green']
+        #     filters = [
+        #     (stim_colour["R1"] == 0)
+        #     &(stim_colour["G1"] == 0)
+        #     &(stim_colour["B1"] == 0),
+        #     (stim_colour["R1"] == 0)
+        #     &(stim_colour["G1"] == 0)
+        #     &(stim_colour["B1"] == 1),
+        #     (stim_colour["R1"] == 0.8117),
+        #     (stim_colour["R1"] == 1)
+        #     &(stim_colour["G1"] == 1)
+        #     &(stim_colour["B1"] == 1),
+        #     (stim_colour["R1"] == 0)
+        #     &(stim_colour["G1"] == 1)
+        #     &(stim_colour["B1"] == 0),
+        #     (stim_colour["R1"] == 0.5882)
+        # ]
+        #     stim_colour.loc[:,"stim_type"] = np.select(filters, stim_type,default="unclassified")
+        #     stim_size=stim_info.iloc[num_colour_trial:]
+        #     stim_type = ['size1_orientation1','size2_orientation1','size3_orientation1','size1_orientation2','size2_orientation2','size3_orientation2']
+        #     filters = [
+        #     (stim_size["LocationBeginX1"]*stim_size["LocationBeginZ1"] == 50)
+        #     &(stim_size["LocationBeginZ1"] < stim_size["LocationBeginX1"]),
+        #     (stim_size["LocationBeginX1"]*stim_size["LocationBeginZ1"] == 450)
+        #     &(stim_size["LocationBeginZ1"] < stim_size["LocationBeginX1"]),
+        #     (stim_size["LocationBeginX1"]*stim_size["LocationBeginZ1"] == 1800)
+        #     &(stim_size["LocationBeginZ1"] < stim_size["LocationBeginX1"]),
+        #     (stim_size["LocationBeginX1"]*stim_size["LocationBeginZ1"] == 50)
+        #     &(stim_size["LocationBeginZ1"] > stim_size["LocationBeginX1"]),
+        #     (stim_size["LocationBeginX1"]*stim_size["LocationBeginZ1"] == 450)
+        #     &(stim_size["LocationBeginZ1"] > stim_size["LocationBeginX1"]),
+        #     (stim_size["LocationBeginX1"]*stim_size["LocationBeginZ1"] == 1800)
+        #     &(stim_size["LocationBeginZ1"] > stim_size["LocationBeginX1"])]
+        #     stim_size.loc[:,"stim_type"] = np.select(filters, stim_type,default="unclassified")
+        #     stim_info=pd.concat((stim_colour,stim_size))
         else:
             stim_type = [
                 "receding_left",
