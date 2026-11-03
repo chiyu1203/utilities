@@ -1122,7 +1122,7 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
     thisDir=Path(this_file).parent
     experiment_timestamp = file_name.split("-")
     if version('pandas')<'2.3':
-        raw_data = pd.read_table(this_file, sep='\s+')
+        raw_data = pd.read_table(this_file, sep='\\s+')
     else:
         raw_data = pd.read_table(this_file)
     """
