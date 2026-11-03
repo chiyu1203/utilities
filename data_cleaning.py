@@ -480,7 +480,7 @@ def sorting_trial_info(stim_info, analysis_methods,exp_date="XXXXXX"):
                 cols_to_convert = ["LocustTexture1","LocustTexture2","HeadingAt0degree1","HeadingAt0degree2","LocustObj1","LocustObj2","PolarBeginDegree1","PolarEndDegree1","Phase1","Duration","TranslationalGain","RotationalGain"]
             else:
                 default_column_names = ["LocationBeginX1","LocationEndX1","LocationBeginZ1","LocationEndZ1","PolarBeginR1","PolarEndR1","PolarBeginDegree1","PolarEndDegree1","Phase1","PreMovDuration","Duration","PostMovDuration","ISI","LocustObj1","ReverseZ1","LocustTexture1","TranslationalGain","RotationalGain","R1","G1","B1","A1","R2","G2","B2","A2"]
-                cols_to_convert = ["LocustTexture1","ReverseZ1","LocustObj1","PolarBeginDegree1","PolarEndDegree1","Phase1","Duration"]
+                cols_to_convert = ["LocustTexture1","ReverseZ1","LocustObj1","PolarBeginDegree1","PolarEndDegree1","Phase1"]
             if stim_info['Timestamp'].dtypes=='float64':
                 this_column_names=default_column_names[:stim_variable.shape[1]]
                 stim_info_curated = pd.DataFrame(stim_variable, columns=this_column_names)
