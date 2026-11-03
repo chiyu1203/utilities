@@ -6,7 +6,8 @@ import scipy.fftpack
 import scipy.io
 import pandas as pd
 import scipy.stats as st
-
+from typing import Optional, Sequence
+import warnings,argparse
 def read_seq_config(file_path):
     with open(file_path, 'r') as file:
         data = json.load(file)
@@ -340,6 +341,162 @@ def hdf_file_reclocation(source_path, folder_name, overwrite_existing_tracking):
             print("No matching subdirectories found.")
             continue
 
+def boolean_array_to_event_table(
+    reached_target: np.ndarray,
+    *,
+    timepoints: Optional[Sequence[float]] = None,
+    sampling_interval: Optional[float] = None,
+    stimulus_onset: float = 0.0,
+    stimulus_onset_index: int = -1,
+    consecutive_samples: int = 1,
+    trial_ids: Optional[Sequence] = None,
+    subject_ids: Optional[Sequence] = None,
+    trial_col: str = "trial",
+    subject_col: str = "animal_id",
+) -> pd.DataFrame:
+    """Convert a trial-by-time Boolean array to first-passage event data.
+
+    Parameters
+    ----------
+    reached_target
+        Two-dimensional array with shape (n_trials, n_timepoints). True means
+        that the target-speed criterion was met at that sampled timepoint.
+        Numeric arrays are accepted only when every value is 0 or 1.
+    timepoints
+        Optional length-n_timepoints vector containing the recorded times in
+        seconds. Values may include baseline times. ``stimulus_onset`` is
+        subtracted from this vector, and only strictly post-onset samples are
+        used. Supply either ``timepoints`` or ``sampling_interval``.
+    sampling_interval
+        Seconds between columns when an explicit time vector is unavailable.
+        Relative time is calculated as
+        ``(column_index - stimulus_onset_index) * sampling_interval``.
+    stimulus_onset
+        Stimulus-onset time in the coordinate system of ``timepoints``. This
+        argument is used only when ``timepoints`` is supplied.
+    stimulus_onset_index
+        Column representing t=0 when ``sampling_interval`` is used. The default
+        -1 means that column 0 is the first post-onset sample, occurring one
+        sampling interval after onset. If column 0 is sampled exactly at t=0,
+        pass 0. If column 100 is t=0, pass 100.
+    consecutive_samples
+        Number of consecutive True samples required to define a hit. The event
+        time is the beginning of the first qualifying run. Default is 1.
+    trial_ids, subject_ids
+        Optional identifiers with one value per row. Supplying ``subject_ids``
+        adds a column suitable for ``subject_col`` in the fitting function.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per trial. ``time`` is the first-hit latency for event=1, or
+        the last observed post-onset time for event=0 (right-censored).
+
+    Notes
+    -----
+    A sample exactly at t=0 is excluded because the continuous Weibull model
+    requires positive event times. A True value at t=0 that persists into the
+    next sample is therefore recorded at the first strictly positive time.
+    """
+    values = np.asarray(reached_target)
+    if values.ndim != 2:
+        raise ValueError(
+            "reached_target must be a 2D array with shape "
+            "(n_trials, n_timepoints)"
+        )
+    n_trials, n_timepoints = values.shape
+    if n_trials == 0 or n_timepoints == 0:
+        raise ValueError("reached_target cannot have an empty dimension")
+
+    if values.dtype != np.bool_:
+        if not np.issubdtype(values.dtype, np.number):
+            raise TypeError("reached_target must contain Boolean or 0/1 values")
+        if np.any(~np.isfinite(values)) or not np.all(np.isin(values, [0, 1])):
+            raise ValueError("Numeric reached_target arrays may contain only 0 and 1")
+    hits = values.astype(bool, copy=False)
+
+    if timepoints is not None and sampling_interval is not None:
+        raise ValueError("Supply timepoints or sampling_interval, not both")
+    if timepoints is None and sampling_interval is None:
+        raise ValueError("Supply either timepoints or sampling_interval")
+
+    if timepoints is not None:
+        sample_times = np.asarray(timepoints, dtype=float)
+        if sample_times.ndim != 1 or len(sample_times) != n_timepoints:
+            raise ValueError(
+                "timepoints must be one-dimensional with one value per column"
+            )
+        if np.any(~np.isfinite(sample_times)):
+            raise ValueError("timepoints contains missing or non-finite values")
+        if np.any(np.diff(sample_times) <= 0):
+            raise ValueError("timepoints must be strictly increasing")
+        relative_times = sample_times - float(stimulus_onset)
+    else:
+        sampling_interval = float(sampling_interval)
+        if not np.isfinite(sampling_interval) or sampling_interval <= 0:
+            raise ValueError("sampling_interval must be a positive number")
+        if not isinstance(stimulus_onset_index, (int, np.integer)):
+            raise TypeError("stimulus_onset_index must be an integer")
+        if stimulus_onset_index >= n_timepoints:
+            raise ValueError("stimulus_onset_index lies beyond the final column")
+        relative_times = (
+            np.arange(n_timepoints, dtype=float) - stimulus_onset_index
+        ) * sampling_interval
+
+    post_mask = relative_times > 0
+    if not np.any(post_mask):
+        raise ValueError("There must be at least one timepoint after stimulus onset")
+    if np.any(hits[:, relative_times < 0]):
+        warnings.warn(
+            "At least one pre-stimulus True value was found. These samples are "
+            "excluded, but they conflict with a zero pre-stimulus failure rate.",
+            stacklevel=2,
+        )
+
+    if not isinstance(consecutive_samples, (int, np.integer)):
+        raise TypeError("consecutive_samples must be an integer")
+    if consecutive_samples < 1:
+        raise ValueError("consecutive_samples must be at least 1")
+
+    post_hits = hits[:, post_mask]#only consider positive value in time
+    post_times = relative_times[post_mask]#only consider positive value in time
+    if consecutive_samples > post_hits.shape[1]:
+        raise ValueError(
+            "consecutive_samples exceeds the number of post-stimulus samples"
+        )
+    if consecutive_samples == 1:
+        qualifying = post_hits
+    else:
+        windows = np.lib.stride_tricks.sliding_window_view(
+            post_hits, window_shape=consecutive_samples, axis=1
+        )
+        qualifying = windows.all(axis=-1)
+
+    event = qualifying.any(axis=1)
+    first_index = np.argmax(qualifying, axis=1)
+    observed_time = np.full(n_trials, post_times[-1], dtype=float)
+    observed_time[event] = post_times[first_index[event]]
+
+    if trial_ids is None:
+        trial_ids_array = np.arange(n_trials)
+    else:
+        trial_ids_array = np.asarray(trial_ids)
+        if trial_ids_array.ndim != 1 or len(trial_ids_array) != n_trials:
+            raise ValueError("trial_ids must contain one value per array row")
+
+    output = pd.DataFrame(
+        {
+            trial_col: trial_ids_array,
+            "time": observed_time,
+            "event": event.astype(int),
+        }
+    )
+    if subject_ids is not None:
+        subject_ids_array = np.asarray(subject_ids)
+        if subject_ids_array.ndim != 1 or len(subject_ids_array) != n_trials:
+            raise ValueError("subject_ids must contain one value per array row")
+        output[subject_col] = subject_ids_array
+    return output,qualifying
 
 # if __name__ == "__main__":
 #     source_path = "Z:/DATA/experiment_Locust_PreferenceArena/sleap_hdf_new"
