@@ -498,6 +498,91 @@ def boolean_array_to_event_table(
         output[subject_col] = subject_ids_array
     return output,qualifying
 
+def bootstrap_cumulative_probability(
+    qualifying,
+    *,
+    subject_ids=None,
+    n_resamples=10_000,
+    confidence_level=0.95,
+    batch=100,
+    seed=42,
+):
+    """Return (probability, lower, upper), each shaped (n_window_starts,).
+
+    Parameters
+    ----------
+    qualifying : 2D Boolean or 0/1 array
+        Output from boolean_array_to_event_table. Rows are trials and columns
+        are candidate start times for qualifying windows.
+    subject_ids : 1D sequence or None
+        One animal ID per trial. If supplied, resample animals with replacement
+        and keep all trials belonging to each sampled animal. Otherwise,
+        resample trials with replacement, assuming trials are independent.
+    n_resamples : int
+        Number of bootstrap draws.
+    confidence_level : float
+        Pointwise confidence level, between zero and one.
+    batch : int
+        Number of index resamples processed together by SciPy. Reduces working
+        memory, but SciPy still stores all bootstrap curves in its result.
+    seed : int, numpy.random.Generator, or None
+        Random seed or generator passed through numpy.random.default_rng.
+
+    Notes
+    -----
+    The estimate is always weighted equally over trials, including when
+    resampling animals with unequal trial counts. No-event trials remain in
+    the denominator. These are percentile intervals, not simultaneous bands.
+    Columns where all resampling units have the same probability give a
+    zero-width interval. This limitation does not establish certainty about
+    the underlying population probability. Few independent units can give
+    unreliable coverage, regardless of the number of bootstrap draws.
+    """
+    qualifying = np.asarray(qualifying)
+    if qualifying.ndim != 2 or 0 in qualifying.shape:
+        raise ValueError("qualifying must be a non-empty 2D array")
+    if not np.all((qualifying == 0) | (qualifying == 1)):
+        raise ValueError("qualifying must contain only Boolean or 0/1 values")
+
+    # True from the first qualifying event onward, independently for each trial.
+    cumulative = np.maximum.accumulate(qualifying.astype(bool), axis=1)
+    probability = cumulative.mean(axis=0)
+    n_trials, n_times = cumulative.shape
+
+    if subject_ids is None:
+        unit_sums = cumulative
+        unit_sizes = np.ones(n_trials, dtype=int)
+    else:
+        ids = np.asarray(subject_ids)
+        if ids.shape != (n_trials,):
+            raise ValueError("subject_ids must have one animal ID per trial")
+        codes, animals = pd.factorize(ids, sort=False)
+        if np.any(codes < 0):
+            raise ValueError("subject_ids cannot contain missing values")
+        unit_sums = np.zeros((len(animals), n_times), dtype=np.int64)
+        np.add.at(unit_sums, codes, cumulative)
+        unit_sizes = np.bincount(codes)
+
+    n_units = len(unit_sizes)
+    if n_units < 2:
+        raise ValueError("Need at least two independent trials or animals")
+
+    def statistic(indices):
+        # Reusing the same indices at every time preserves each unit's curve.
+        return unit_sums[indices].sum(axis=0) / unit_sizes[indices].sum()
+
+    result = st.bootstrap(
+        (np.arange(n_units),),
+        statistic=statistic,
+        vectorized=False,
+        n_resamples=n_resamples,
+        confidence_level=confidence_level,
+        batch=batch,
+        method="percentile",
+        rng=np.random.default_rng(seed),
+    )
+    return probability, result.confidence_interval.low, result.confidence_interval.high
+
 # if __name__ == "__main__":
 #     source_path = "Z:/DATA/experiment_Locust_PreferenceArena/sleap_hdf_new"
 #     overwrite_existing_tracking = True
