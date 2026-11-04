@@ -1121,7 +1121,7 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
     file_name = Path(this_file).stem
     thisDir=Path(this_file).parent
     experiment_timestamp = file_name.split("-")
-    if version('pandas')<'2.3':
+    if version('pandas')<'2.3' or analysis_methods.get("experiment_name")=='sweeploom':
         raw_data = pd.read_table(this_file, sep='\\s+')
     else:
         raw_data = pd.read_table(this_file)
@@ -1200,6 +1200,7 @@ def load_fictrac_data_file(this_file, analysis_methods,column_to_drop=[0, 1, 2, 
     raw_data[["intergrated x position","intergrated y position"]]=raw_data[["intergrated x position","intergrated y position"]]*track_ball_radius
     ## adjust the unit of the z vector based on the target frame rate of fictrac to get angular velocity omega
     raw_data[["delta rotation vector lab x","delta rotation vector lab y","delta rotation vector lab z"]]=raw_data[["delta rotation vector lab x","delta rotation vector lab y","delta rotation vector lab z"]]*camera_fps
+    #test=pd.read_parquet(r"Z:\DATA\experiment_trackball_Optomotor\VCCball\L22140\221103\sweeploom\archive\database_fictrac-20221103_140301.parquet.gzip")
     remove_old_fictrac_database = True
     if remove_old_fictrac_database & overwrite_curated_dataset:
         old_database_pattern = f"database_*.pickle"
@@ -1283,7 +1284,7 @@ if __name__ == "__main__":
     #thisDir = r"Z:\DATA\experiment_trackball_Optomotor\MatrexVR\GN24036\240801\coherence\session1"
     #thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25102\250929\coherence\session1"
     #thisDir = r"Z:\DATA\experiment_trackball_Optomotor\Zball\GN25101\250917\looming\session1"
-    thisDir = r"Z:\DATA\experiment_trackball_Optomotor\VCCball\L22144\221103\sweeploom"
+    thisDir = r"Z:\DATA\experiment_trackball_Optomotor\VCCball\L22140\221103\sweeploom"
     #thisDir = r"C:\Users\neuroLaptop\Documents\GN25006\250312\receding\session1"
     # thisDir = r"C:\Users\neuroLaptop\Documents\GN25040\250106\speed\session1"
     json_file = r"..\bonfic\analysis_methods_dictionary.json"

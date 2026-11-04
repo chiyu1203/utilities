@@ -340,6 +340,11 @@ def hdf_file_reclocation(source_path, folder_name, overwrite_existing_tracking):
         else:
             print("No matching subdirectories found.")
             continue
+def converting_follow_velocity(row):
+    if row['stim_type'] <0:
+        row['stim_type'] *= -1    # Check condition on the first column
+        row.loc['angular_velocity_f0':] *= -1
+    return row
 
 def boolean_array_to_event_table(
     reached_target: np.ndarray,
